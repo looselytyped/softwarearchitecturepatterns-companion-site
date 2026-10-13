@@ -1,285 +1,700 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en"
+      data-theme="light">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark light">
-<title>Software Architecture Patterns, Antipatterns, and Pitfalls — graph view</title>
-<style>
-:root{--bg:#1e1e1e;--panel:#262626;--border:#3a3a3a;--text:#dcddde;--muted:#8a8a8a;
---note:#a882ff;--anti:#ff7b72;--pit:#ffa657;--unres:#5c5c5c;--ctx:#3fb0e6;--cap:#7bd88f;--auth:#e0b25a;--infl:#e57bd0;--aka:#9aa;
---imp:#4cc26c;--deg:#e05a5a;--link:#4f4f4f;
---input-bg:#1a1a1a;--btn:#333;--btn-hover:#3d3d3d;--hi:#fff;--accent:#c9b6ff;--chip:#2e2e2e;--chip-hover:#3a3a3a;
---label:#e6e6e6;--ring:#fff;--ring-soft:rgba(255,255,255,.5);--shadow:rgba(0,0,0,.4);color-scheme:dark}
-:root[data-theme="light"]{--bg:#f6f6f4;--panel:#ffffff;--border:#d6d6d2;--text:#1f1f1f;--muted:#666;
---note:#7247e0;--anti:#d23f3a;--pit:#cf6f10;--unres:#aaa;--ctx:#1a85bd;--cap:#2c9447;--auth:#a97a12;--infl:#b83d97;--aka:#5f7c7c;
---imp:#2c9447;--deg:#cc3434;--link:#c2c2c2;
---input-bg:#fafafa;--btn:#f0f0ee;--btn-hover:#e4e4e0;--hi:#000;--accent:#5b36c4;--chip:#f3f0fb;--chip-hover:#e6e0f7;
---label:#2a2a2a;--ring:#111;--ring-soft:rgba(0,0,0,.4);--shadow:rgba(0,0,0,.12);color-scheme:light}}
-@media (prefers-color-scheme: light){:root:not([data-theme]){--bg:#f6f6f4;--panel:#ffffff;--border:#d6d6d2;--text:#1f1f1f;--muted:#666;
---note:#7247e0;--anti:#d23f3a;--pit:#cf6f10;--unres:#aaa;--ctx:#1a85bd;--cap:#2c9447;--auth:#a97a12;--infl:#b83d97;--aka:#5f7c7c;
---imp:#2c9447;--deg:#cc3434;--link:#c2c2c2;
---input-bg:#fafafa;--btn:#f0f0ee;--btn-hover:#e4e4e0;--hi:#000;--accent:#5b36c4;--chip:#f3f0fb;--chip-hover:#e6e0f7;
---label:#2a2a2a;--ring:#111;--ring-soft:rgba(0,0,0,.4);--shadow:rgba(0,0,0,.12);color-scheme:light}}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;overflow:hidden}
-#c{position:absolute;inset:0;display:block;cursor:grab}
-#c.drag{cursor:grabbing}
-#panel{position:absolute;top:76px;left:12px;width:270px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 4px 16px var(--shadow);max-height:calc(100% - 88px);overflow:auto}
-#panel h1{font-size:14px;margin:0 0 8px;font-weight:600}
-#panel h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px;font-weight:600}
-#panel label{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;user-select:none}
-#panel input[type=search]{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:6px 8px;outline:none}
-#panel input[type=search]:focus{border-color:var(--note)}
-#panel input[type=range]{width:100%}
-.sw{width:10px;height:10px;border-radius:50%;flex:none}
-.line{width:18px;height:3px;border-radius:2px;flex:none}
-.stat{color:var(--muted);font-size:12px}
-#info{position:absolute;top:76px;right:12px;width:300px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 4px 16px var(--shadow);max-height:calc(100% - 88px);overflow:auto;display:none}
-#info h1{font-size:15px;margin:0 0 4px;font-weight:600;word-break:break-word}
-#info .kind{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-#info h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 4px;font-weight:600}
-#info ul{list-style:none;margin:0;padding:0}
-#info li{padding:2px 0;cursor:pointer;word-break:break-word}
-#info li:hover{color:var(--hi);text-decoration:underline}
-#info li.imp::before{content:"▲ ";color:var(--imp)}
-#info li.deg::before{content:"▼ ";color:var(--deg)}
-#info .close{position:absolute;top:8px;right:10px;cursor:pointer;color:var(--muted);font-size:16px}
-#help{position:absolute;bottom:10px;right:12px;color:var(--muted);font-size:11px}
-button{background:var(--btn);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;cursor:pointer;font-size:12px}
-button:hover{background:var(--btn-hover)}
-.row{display:flex;gap:6px;margin-top:6px}
-
-#hdr{position:absolute;top:0;left:0;right:0;height:64px;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:2}
-#hdr h1{font-size:17px;margin:0;font-weight:600;line-height:1.25}
-#hdr .sub{color:var(--muted);font-size:12px;margin-top:2px}
-#hdr .links{display:flex;gap:10px;flex:none;flex-wrap:wrap;justify-content:flex-end}
-#hdr a,#hdr button{color:var(--accent);text-decoration:none;border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:12px;background:var(--chip)}
-#hdr a:hover,#hdr a:focus-visible,#hdr button:hover,#hdr button:focus-visible{background:var(--chip-hover);color:var(--hi)}
-@media (max-width:760px){#hdr{height:auto;flex-direction:column;align-items:flex-start}}
-</style>
-</head>
-<body>
-<div id="hdr">
-  <div><h1>Software Architecture Patterns, Antipatterns, and Pitfalls</h1>
-  <div class="sub">Obsidian graph view of patterns and their contexts and affected capabilities</div></div>
-  <div class="links"><a href="index.html">Home</a><button id="theme-toggle" type="button" aria-pressed="false">Use light theme</button><a href="https://www.oreilly.com/library/view/software-architecture-patterns/0642572221119/" target="_blank" rel="noopener">O'Reilly</a><a href="https://www.amazon.com/Software-Architecture-Patterns-Antipatterns-Pitfalls/dp/B0GQF83WT5/ref=sr_1_1?crid=6FPU0BZVTNYJ&dib=eyJ2IjoiMSJ9.ewUASgmcJ10zaKLP2Axg9rLjFy4J6vhfLqUAThVFVDIDhOpvNUzotnZSi57m8X0W3GmqnlJlkopEuSvwi8WHRE-FASGTVzRKc-ieAUDxxkPBRtQI7md76k81uIjzXqjV29ttJHfkTDITSd1fhE1WTk78BtF8VVhrxk6k9fFAqzGIuW4kGRUyRCbaXiNTZLjzeVZv3I5ZLzqATaa88c-9v4btSLzDWCOfTGyiLLqb1Kw.wVQbKXnBeT7MYax2BPdXl3ja5LFls9s4IFUNv-vaCd8&dib_tag=se&keywords=Software+Architecture+Patterns%2C+Antipatterns%2C+and+Pitfalls&qid=1790706592&sprefix=software+architecture+patterns%2C+antipatterns%2C+and+pitfalls%2Caps%2C181&sr=8-1" target="_blank" rel="noopener">Buy on Amazon</a></div>
-</div>
-<canvas id="c"></canvas>
-<div id="panel">
-  <h1>Graph controls</h1>
-  <input id="q" type="search" placeholder="Search nodes…">
-  <div class="stat" id="stat"></div>
-  <h2>Nodes</h2>
-  <label><input type="checkbox" data-k="note:pattern" checked><span class="sw" style="background:var(--note)"></span>Patterns</label>
-  <label><input type="checkbox" data-k="note:antipattern" checked><span class="sw" style="background:var(--anti)"></span>Antipatterns</label>
-  <label><input type="checkbox" data-k="note:pitfall" checked><span class="sw" style="background:var(--pit)"></span>Pitfalls</label>
-  <label><input type="checkbox" data-k="tag:context" checked><span class="sw" style="background:var(--ctx)"></span>#context tags</label>
-  <label><input type="checkbox" data-k="tag:capability" checked><span class="sw" style="background:var(--cap)"></span>#capability tags</label>
-  <label><input type="checkbox" data-k="tag:influence"><span class="sw" style="background:var(--infl)"></span>#influence tags</label>
-  <label><input type="checkbox" data-k="tag:aka"><span class="sw" style="background:var(--aka)"></span>#aka tags</label>
-  <h2>Edges</h2>
-  <label><span class="line" style="background:var(--link)"></span>[[wikilink]]</label>
-  <label><span class="line" style="background:var(--ctx);opacity:.7"></span>note → context</label>
-  <label><span class="line" style="background:var(--imp)"></span>improved capability</label>
-  <label><span class="line" style="background:var(--deg)"></span>degraded capability</label>
-  <label><input type="checkbox" id="arrows"> Show arrows</label>
-  <label><input type="checkbox" id="labels" checked> Always show labels</label>
-  <h2>Forces</h2>
-  <label>Repel <input type="range" id="repel" min="1" max="30" value="10"></label>
-  <label>Link distance <input type="range" id="dist" min="40" max="400" value="120"></label>
-  <label>Center <input type="range" id="center" min="0" max="100" value="12"></label>
-  <div class="row"><button id="reheat">Re-layout</button><button id="fit">Fit</button></div>
-</div>
-<div id="info"><span class="close" id="close">×</span><div id="infoBody"></div></div>
-<div id="help">drag to pan · scroll to zoom · drag nodes · click for details · double-click to release</div>
-<script>
-const DATA = {"nodes":[{"id":"Ambulance pattern","kind":"note:pattern","label":"Ambulance pattern"},{"id":"#context/event_driven_architecture","kind":"tag:context","label":"#context/event_driven_architecture"},{"id":"#context/message_based_architectures","kind":"tag:context","label":"#context/message_based_architectures"},{"id":"#aka/carpool","kind":"tag:aka","label":"#aka/carpool"},{"id":"#capability/responsiveness","kind":"tag:capability","label":"#capability/responsiveness"},{"id":"#capability/throughput","kind":"tag:capability","label":"#capability/throughput"},{"id":"#capability/message_processing_order","kind":"tag:capability","label":"#capability/message_processing_order"},{"id":"#capability/simplicity","kind":"tag:capability","label":"#capability/simplicity"},{"id":"Architecture Sinkhole antipattern","kind":"note:antipattern","label":"Architecture Sinkhole antipattern"},{"id":"#context/layered_architecture","kind":"tag:context","label":"#context/layered_architecture"},{"id":"#context/monolithic_architectures","kind":"tag:context","label":"#context/monolithic_architectures"},{"id":"#capability/debuggability","kind":"tag:capability","label":"#capability/debuggability"},{"id":"#capability/evolvability","kind":"tag:capability","label":"#capability/evolvability"},{"id":"#capability/maintainability","kind":"tag:capability","label":"#capability/maintainability"},{"id":"#capability/modularity","kind":"tag:capability","label":"#capability/modularity"},{"id":"#capability/testability","kind":"tag:capability","label":"#capability/testability"},{"id":"#capability/initial_time_to_market","kind":"tag:capability","label":"#capability/initial_time_to_market"},{"id":"Architecture by Implication antipattern","kind":"note:antipattern","label":"Architecture by Implication antipattern"},{"id":"#context/agentic_code_generation","kind":"tag:context","label":"#context/agentic_code_generation"},{"id":"#context/architectural_styles","kind":"tag:context","label":"#context/architectural_styles"},{"id":"#capability/cost","kind":"tag:capability","label":"#capability/cost"},{"id":"#capability/adaptability","kind":"tag:capability","label":"#capability/adaptability"},{"id":"#capability/agility","kind":"tag:capability","label":"#capability/agility"},{"id":"#capability/availability","kind":"tag:capability","label":"#capability/availability"},{"id":"#capability/data_consistency","kind":"tag:capability","label":"#capability/data_consistency"},{"id":"#capability/data_integrity","kind":"tag:capability","label":"#capability/data_integrity"},{"id":"#capability/deployability","kind":"tag:capability","label":"#capability/deployability"},{"id":"#capability/elasticity","kind":"tag:capability","label":"#capability/elasticity"},{"id":"#capability/error_handling","kind":"tag:capability","label":"#capability/error_handling"},{"id":"#capability/fault_tolerance","kind":"tag:capability","label":"#capability/fault_tolerance"},{"id":"#capability/flexibility","kind":"tag:capability","label":"#capability/flexibility"},{"id":"#capability/scalability","kind":"tag:capability","label":"#capability/scalability"},{"id":"#capability/workflow","kind":"tag:capability","label":"#capability/workflow"},{"id":"Async Chain of Persistence pattern","kind":"note:pattern","label":"Async Chain of Persistence pattern"},{"id":"Backend for Frontend pattern","kind":"note:pattern","label":"Backend for Frontend pattern"},{"id":"#context/multiple_user_interfaces","kind":"tag:context","label":"#context/multiple_user_interfaces"},{"id":"#capability/reusability","kind":"tag:capability","label":"#capability/reusability"},{"id":"Cache Aside pattern","kind":"note:pattern","label":"Cache Aside pattern"},{"id":"#context/caching","kind":"tag:context","label":"#context/caching"},{"id":"#context/data","kind":"tag:context","label":"#context/data"},{"id":"#context/microservices","kind":"tag:context","label":"#context/microservices"},{"id":"#aka/lazy_loading","kind":"tag:aka","label":"#aka/lazy_loading"},{"id":"Choreography pattern","kind":"note:pattern","label":"Choreography pattern"},{"id":"#context/workflow","kind":"tag:context","label":"#context/workflow"},{"id":"#aka/broker","kind":"tag:aka","label":"#aka/broker"},{"id":"#influence/communication","kind":"tag:influence","label":"#influence/communication"},{"id":"#influence/atomicity","kind":"tag:influence","label":"#influence/atomicity"},{"id":"#influence/quantum","kind":"tag:influence","label":"#influence/quantum"},{"id":"#capability/domain_alignment","kind":"tag:capability","label":"#capability/domain_alignment"},{"id":"Command Query Responsibility Segregation pattern","kind":"note:pattern","label":"Command Query Responsibility Segregation pattern"},{"id":"Compensating Updates pattern","kind":"note:pattern","label":"Compensating Updates pattern"},{"id":"#aka/saga","kind":"tag:aka","label":"#aka/saga"},{"id":"Contextual Events pattern","kind":"note:pattern","label":"Contextual Events pattern"},{"id":"#context/event_granularity","kind":"tag:context","label":"#context/event_granularity"},{"id":"Cross-Cutting State pattern","kind":"note:pattern","label":"Cross-Cutting State pattern"},{"id":"Data-Based Event Contract pattern","kind":"note:pattern","label":"Data-Based Event Contract pattern"},{"id":"#context/contracts","kind":"tag:context","label":"#context/contracts"},{"id":"#capability/bandwidth_usage","kind":"tag:capability","label":"#capability/bandwidth_usage"},{"id":"Domain-Broker pattern","kind":"note:pattern","label":"Domain-Broker pattern"},{"id":"Event Sourcing pattern","kind":"note:pattern","label":"Event Sourcing pattern"},{"id":"#capability/auditability","kind":"tag:capability","label":"#capability/auditability"},{"id":"Explicit Workflow State pattern","kind":"note:pattern","label":"Explicit Workflow State pattern"},{"id":"Extensible Events pattern","kind":"note:pattern","label":"Extensible Events pattern"},{"id":"Front Controller pattern","kind":"note:pattern","label":"Front Controller pattern"},{"id":"#aka/front_orchestrator","kind":"tag:aka","label":"#aka/front_orchestrator"},{"id":"#influence/transactionality","kind":"tag:influence","label":"#influence/transactionality"},{"id":"Frozen Caveman pitfall","kind":"note:pitfall","label":"Frozen Caveman pitfall"},{"id":"#context/decision_making","kind":"tag:context","label":"#context/decision_making"},{"id":"Grains of Sand pitfall","kind":"note:pitfall","label":"Grains of Sand pitfall"},{"id":"#context/modularity","kind":"tag:context","label":"#context/modularity"},{"id":"#context/service_granularity","kind":"tag:context","label":"#context/service_granularity"},{"id":"Implicit Workflow State pattern","kind":"note:pattern","label":"Implicit Workflow State pattern"},{"id":"Key-Based Event Contract pattern","kind":"note:pattern","label":"Key-Based Event Contract pattern"},{"id":"Microservice All the Things pitfall","kind":"note:pitfall","label":"Microservice All the Things pitfall"},{"id":"Multi-Broker pattern","kind":"note:pattern","label":"Multi-Broker pattern"},{"id":"#context/high_volume_processing","kind":"tag:context","label":"#context/high_volume_processing"},{"id":"Nexus Architecture pattern","kind":"note:pattern","label":"Nexus Architecture pattern"},{"id":"#influence/granularity","kind":"tag:influence","label":"#influence/granularity"},{"id":"Orchestration pattern","kind":"note:pattern","label":"Orchestration pattern"},{"id":"#aka/mediator","kind":"tag:aka","label":"#aka/mediator"},{"id":"#influence/quantum/contract","kind":"tag:influence","label":"#influence/quantum/contract"},{"id":"#influence/quantum/static","kind":"tag:influence","label":"#influence/quantum/static"},{"id":"#influence/quantum/dynamic","kind":"tag:influence","label":"#influence/quantum/dynamic"},{"id":"Overcentralization antipattern","kind":"note:antipattern","label":"Overcentralization antipattern"},{"id":"#context/integration_architecture","kind":"tag:context","label":"#context/integration_architecture"},{"id":"Read-Through Write-Through Cache pattern","kind":"note:pattern","label":"Read-Through Write-Through Cache pattern"},{"id":"Service Sharding pattern","kind":"note:pattern","label":"Service Sharding pattern"},{"id":"#context/distributed_architecture","kind":"tag:context","label":"#context/distributed_architecture"},{"id":"Stamp Coupling antipattern","kind":"note:antipattern","label":"Stamp Coupling antipattern"},{"id":"Stovepipe Architecture antipattern","kind":"note:antipattern","label":"Stovepipe Architecture antipattern"},{"id":"#context/iterative_architecture","kind":"tag:context","label":"#context/iterative_architecture"},{"id":"Supervisor Consumer pattern","kind":"note:pattern","label":"Supervisor Consumer pattern"},{"id":"Thread Delegate pattern","kind":"note:pattern","label":"Thread Delegate pattern"},{"id":"Workflow Event pattern","kind":"note:pattern","label":"Workflow Event pattern"}],"links":[{"s":"Ambulance pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Ambulance pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Ambulance pattern","t":"#aka/carpool","rel":"aka"},{"s":"Ambulance pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Ambulance pattern","t":"#capability/throughput","rel":"improved"},{"s":"Ambulance pattern","t":"#capability/message_processing_order","rel":"degraded"},{"s":"Ambulance pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Ambulance pattern","t":"Supervisor Consumer pattern","rel":"link"},{"s":"Ambulance pattern","t":"Thread Delegate pattern","rel":"link"},{"s":"Architecture Sinkhole antipattern","t":"#context/layered_architecture","rel":"context"},{"s":"Architecture Sinkhole antipattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Architecture Sinkhole antipattern","t":"#capability/debuggability","rel":"improved"},{"s":"Architecture Sinkhole antipattern","t":"#capability/evolvability","rel":"improved"},{"s":"Architecture Sinkhole antipattern","t":"#capability/maintainability","rel":"improved"},{"s":"Architecture Sinkhole antipattern","t":"#capability/modularity","rel":"improved"},{"s":"Architecture Sinkhole antipattern","t":"#capability/simplicity","rel":"improved"},{"s":"Architecture Sinkhole antipattern","t":"#capability/testability","rel":"improved"},{"s":"Architecture Sinkhole antipattern","t":"#capability/initial_time_to_market","rel":"degraded"},{"s":"Architecture Sinkhole antipattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Architecture Sinkhole antipattern","t":"Architecture by Implication antipattern","rel":"link"},{"s":"Architecture by Implication antipattern","t":"#context/agentic_code_generation","rel":"context"},{"s":"Architecture by Implication antipattern","t":"#context/architectural_styles","rel":"context"},{"s":"Architecture by Implication antipattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Architecture by Implication antipattern","t":"#capability/cost","rel":"improved"},{"s":"Architecture by Implication antipattern","t":"#capability/initial_time_to_market","rel":"improved"},{"s":"Architecture by Implication antipattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/agility","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/availability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/data_consistency","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/data_integrity","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/deployability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/error_handling","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/fault_tolerance","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/flexibility","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/maintainability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/modularity","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/scalability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/testability","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/throughput","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"#capability/workflow","rel":"degraded"},{"s":"Architecture by Implication antipattern","t":"Stovepipe Architecture antipattern","rel":"link"},{"s":"Async Chain of Persistence pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Async Chain of Persistence pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Async Chain of Persistence pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Async Chain of Persistence pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Async Chain of Persistence pattern","t":"#capability/fault_tolerance","rel":"improved"},{"s":"Async Chain of Persistence pattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Async Chain of Persistence pattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Async Chain of Persistence pattern","t":"#capability/scalability","rel":"degraded"},{"s":"Async Chain of Persistence pattern","t":"#capability/throughput","rel":"degraded"},{"s":"Async Chain of Persistence pattern","t":"Contextual Events pattern","rel":"link"},{"s":"Async Chain of Persistence pattern","t":"Data-Based Event Contract pattern","rel":"link"},{"s":"Async Chain of Persistence pattern","t":"Extensible Events pattern","rel":"link"},{"s":"Async Chain of Persistence pattern","t":"Key-Based Event Contract pattern","rel":"link"},{"s":"Async Chain of Persistence pattern","t":"Workflow Event pattern","rel":"link"},{"s":"Backend for Frontend pattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Backend for Frontend pattern","t":"#context/multiple_user_interfaces","rel":"context"},{"s":"Backend for Frontend pattern","t":"#capability/adaptability","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/agility","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/availability","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/deployability","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/error_handling","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/evolvability","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/fault_tolerance","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/flexibility","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/maintainability","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/simplicity","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/testability","rel":"improved"},{"s":"Backend for Frontend pattern","t":"#capability/cost","rel":"degraded"},{"s":"Backend for Frontend pattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Backend for Frontend pattern","t":"#capability/reusability","rel":"degraded"},{"s":"Backend for Frontend pattern","t":"Cache Aside pattern","rel":"link"},{"s":"Cache Aside pattern","t":"#context/caching","rel":"context"},{"s":"Cache Aside pattern","t":"#context/data","rel":"context"},{"s":"Cache Aside pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Cache Aside pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Cache Aside pattern","t":"#context/microservices","rel":"context"},{"s":"Cache Aside pattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Cache Aside pattern","t":"#aka/lazy_loading","rel":"aka"},{"s":"Cache Aside pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Cache Aside pattern","t":"#capability/flexibility","rel":"improved"},{"s":"Cache Aside pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Cache Aside pattern","t":"#capability/scalability","rel":"improved"},{"s":"Cache Aside pattern","t":"#capability/data_consistency","rel":"degraded"},{"s":"Cache Aside pattern","t":"#capability/data_integrity","rel":"degraded"},{"s":"Cache Aside pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Cache Aside pattern","t":"Read-Through Write-Through Cache pattern","rel":"link"},{"s":"Cache Aside pattern","t":"Event Sourcing pattern","rel":"link"},{"s":"Choreography pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Choreography pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Choreography pattern","t":"#context/microservices","rel":"context"},{"s":"Choreography pattern","t":"#context/workflow","rel":"context"},{"s":"Choreography pattern","t":"#aka/broker","rel":"aka"},{"s":"Choreography pattern","t":"#influence/communication","rel":"influence"},{"s":"Choreography pattern","t":"#influence/atomicity","rel":"influence"},{"s":"Choreography pattern","t":"#influence/quantum","rel":"influence"},{"s":"Choreography pattern","t":"#capability/adaptability","rel":"improved"},{"s":"Choreography pattern","t":"#capability/availability","rel":"improved"},{"s":"Choreography pattern","t":"#capability/domain_alignment","rel":"improved"},{"s":"Choreography pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Choreography pattern","t":"#capability/evolvability","rel":"improved"},{"s":"Choreography pattern","t":"#capability/fault_tolerance","rel":"improved"},{"s":"Choreography pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Choreography pattern","t":"#capability/reusability","rel":"improved"},{"s":"Choreography pattern","t":"#capability/scalability","rel":"improved"},{"s":"Choreography pattern","t":"#capability/throughput","rel":"improved"},{"s":"Choreography pattern","t":"#capability/data_consistency","rel":"degraded"},{"s":"Choreography pattern","t":"#capability/data_integrity","rel":"degraded"},{"s":"Choreography pattern","t":"#capability/debuggability","rel":"degraded"},{"s":"Choreography pattern","t":"#capability/error_handling","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"#context/data","rel":"context"},{"s":"Command Query Responsibility Segregation pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Command Query Responsibility Segregation pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Command Query Responsibility Segregation pattern","t":"#context/microservices","rel":"context"},{"s":"Command Query Responsibility Segregation pattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/availability","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/fault_tolerance","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/flexibility","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/scalability","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/throughput","rel":"improved"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/cost","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/data_consistency","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/data_integrity","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/maintainability","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"#capability/testability","rel":"degraded"},{"s":"Command Query Responsibility Segregation pattern","t":"Event Sourcing pattern","rel":"link"},{"s":"Compensating Updates pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Compensating Updates pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Compensating Updates pattern","t":"#context/microservices","rel":"context"},{"s":"Compensating Updates pattern","t":"#context/workflow","rel":"context"},{"s":"Compensating Updates pattern","t":"#aka/saga","rel":"aka"},{"s":"Compensating Updates pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Compensating Updates pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Compensating Updates pattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Compensating Updates pattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Compensating Updates pattern","t":"#capability/scalability","rel":"degraded"},{"s":"Compensating Updates pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Compensating Updates pattern","t":"#capability/throughput","rel":"degraded"},{"s":"Compensating Updates pattern","t":"Orchestration pattern","rel":"link"},{"s":"Compensating Updates pattern","t":"Choreography pattern","rel":"link"},{"s":"Contextual Events pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Contextual Events pattern","t":"#context/event_granularity","rel":"context"},{"s":"Contextual Events pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Contextual Events pattern","t":"#capability/scalability","rel":"improved"},{"s":"Contextual Events pattern","t":"#capability/testability","rel":"improved"},{"s":"Contextual Events pattern","t":"#capability/throughput","rel":"improved"},{"s":"Contextual Events pattern","t":"#capability/workflow","rel":"improved"},{"s":"Contextual Events pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Contextual Events pattern","t":"Async Chain of Persistence pattern","rel":"link"},{"s":"Contextual Events pattern","t":"Data-Based Event Contract pattern","rel":"link"},{"s":"Contextual Events pattern","t":"Extensible Events pattern","rel":"link"},{"s":"Contextual Events pattern","t":"Key-Based Event Contract pattern","rel":"link"},{"s":"Contextual Events pattern","t":"Stamp Coupling antipattern","rel":"link"},{"s":"Cross-Cutting State pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Cross-Cutting State pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Cross-Cutting State pattern","t":"#context/microservices","rel":"context"},{"s":"Cross-Cutting State pattern","t":"#context/workflow","rel":"context"},{"s":"Cross-Cutting State pattern","t":"#capability/adaptability","rel":"improved"},{"s":"Cross-Cutting State pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Cross-Cutting State pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Cross-Cutting State pattern","t":"#capability/evolvability","rel":"improved"},{"s":"Cross-Cutting State pattern","t":"#capability/testability","rel":"improved"},{"s":"Cross-Cutting State pattern","t":"#capability/availability","rel":"degraded"},{"s":"Cross-Cutting State pattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Cross-Cutting State pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Cross-Cutting State pattern","t":"Choreography pattern","rel":"link"},{"s":"Cross-Cutting State pattern","t":"Compensating Updates pattern","rel":"link"},{"s":"Cross-Cutting State pattern","t":"Orchestration pattern","rel":"link"},{"s":"Cross-Cutting State pattern","t":"Front Controller pattern","rel":"link"},{"s":"Data-Based Event Contract pattern","t":"#context/contracts","rel":"context"},{"s":"Data-Based Event Contract pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Data-Based Event Contract pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Data-Based Event Contract pattern","t":"#context/microservices","rel":"context"},{"s":"Data-Based Event Contract pattern","t":"#capability/adaptability","rel":"improved"},{"s":"Data-Based Event Contract pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Data-Based Event Contract pattern","t":"#capability/evolvability","rel":"improved"},{"s":"Data-Based Event Contract pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Data-Based Event Contract pattern","t":"#capability/scalability","rel":"improved"},{"s":"Data-Based Event Contract pattern","t":"#capability/throughput","rel":"improved"},{"s":"Data-Based Event Contract pattern","t":"#capability/bandwidth_usage","rel":"degraded"},{"s":"Data-Based Event Contract pattern","t":"#capability/data_consistency","rel":"degraded"},{"s":"Data-Based Event Contract pattern","t":"#capability/data_integrity","rel":"degraded"},{"s":"Data-Based Event Contract pattern","t":"Command Query Responsibility Segregation pattern","rel":"link"},{"s":"Data-Based Event Contract pattern","t":"Cache Aside pattern","rel":"link"},{"s":"Data-Based Event Contract pattern","t":"Read-Through Write-Through Cache pattern","rel":"link"},{"s":"Domain-Broker pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Domain-Broker pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Domain-Broker pattern","t":"#context/microservices","rel":"context"},{"s":"Domain-Broker pattern","t":"#capability/availability","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/domain_alignment","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/fault_tolerance","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/flexibility","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/modularity","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/scalability","rel":"improved"},{"s":"Domain-Broker pattern","t":"#capability/cost","rel":"degraded"},{"s":"Domain-Broker pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Domain-Broker pattern","t":"Multi-Broker pattern","rel":"link"},{"s":"Event Sourcing pattern","t":"#context/data","rel":"context"},{"s":"Event Sourcing pattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Event Sourcing pattern","t":"#context/microservices","rel":"context"},{"s":"Event Sourcing pattern","t":"#capability/auditability","rel":"improved"},{"s":"Event Sourcing pattern","t":"#capability/debuggability","rel":"improved"},{"s":"Event Sourcing pattern","t":"#capability/testability","rel":"improved"},{"s":"Event Sourcing pattern","t":"#capability/cost","rel":"degraded"},{"s":"Event Sourcing pattern","t":"#capability/data_consistency","rel":"degraded"},{"s":"Event Sourcing pattern","t":"#capability/data_integrity","rel":"degraded"},{"s":"Event Sourcing pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Event Sourcing pattern","t":"Command Query Responsibility Segregation pattern","rel":"link"},{"s":"Event Sourcing pattern","t":"Cache Aside pattern","rel":"link"},{"s":"Event Sourcing pattern","t":"Read-Through Write-Through Cache pattern","rel":"link"},{"s":"Explicit Workflow State pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Explicit Workflow State pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Explicit Workflow State pattern","t":"#context/microservices","rel":"context"},{"s":"Explicit Workflow State pattern","t":"#context/workflow","rel":"context"},{"s":"Explicit Workflow State pattern","t":"#capability/testability","rel":"improved"},{"s":"Explicit Workflow State pattern","t":"#capability/workflow","rel":"improved"},{"s":"Explicit Workflow State pattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Explicit Workflow State pattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Explicit Workflow State pattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Explicit Workflow State pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Explicit Workflow State pattern","t":"Implicit Workflow State pattern","rel":"link"},{"s":"Explicit Workflow State pattern","t":"Front Controller pattern","rel":"link"},{"s":"Extensible Events pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Extensible Events pattern","t":"#capability/adaptability","rel":"improved"},{"s":"Extensible Events pattern","t":"#capability/agility","rel":"improved"},{"s":"Extensible Events pattern","t":"#capability/deployability","rel":"improved"},{"s":"Extensible Events pattern","t":"#capability/evolvability","rel":"improved"},{"s":"Extensible Events pattern","t":"#capability/maintainability","rel":"improved"},{"s":"Extensible Events pattern","t":"#capability/testability","rel":"improved"},{"s":"Extensible Events pattern","t":"#capability/bandwidth_usage","rel":"degraded"},{"s":"Extensible Events pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Extensible Events pattern","t":"Async Chain of Persistence pattern","rel":"link"},{"s":"Extensible Events pattern","t":"Contextual Events pattern","rel":"link"},{"s":"Extensible Events pattern","t":"Data-Based Event Contract pattern","rel":"link"},{"s":"Extensible Events pattern","t":"Key-Based Event Contract pattern","rel":"link"},{"s":"Front Controller pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Front Controller pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Front Controller pattern","t":"#context/microservices","rel":"context"},{"s":"Front Controller pattern","t":"#context/workflow","rel":"context"},{"s":"Front Controller pattern","t":"#aka/front_orchestrator","rel":"aka"},{"s":"Front Controller pattern","t":"#influence/transactionality","rel":"influence"},{"s":"Front Controller pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Front Controller pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Front Controller pattern","t":"#capability/debuggability","rel":"improved"},{"s":"Front Controller pattern","t":"#capability/error_handling","rel":"improved"},{"s":"Front Controller pattern","t":"#capability/workflow","rel":"improved"},{"s":"Front Controller pattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/availability","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/fault_tolerance","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/reusability","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/scalability","rel":"degraded"},{"s":"Front Controller pattern","t":"#capability/throughput","rel":"degraded"},{"s":"Front Controller pattern","t":"Cross-Cutting State pattern","rel":"link"},{"s":"Front Controller pattern","t":"Choreography pattern","rel":"link"},{"s":"Frozen Caveman pitfall","t":"#context/decision_making","rel":"context"},{"s":"Frozen Caveman pitfall","t":"#capability/adaptability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/agility","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/availability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/cost","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/debuggability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/deployability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/elasticity","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/error_handling","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/evolvability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/fault_tolerance","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/flexibility","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/maintainability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/modularity","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/responsiveness","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/scalability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/simplicity","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/testability","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/throughput","rel":"degraded"},{"s":"Frozen Caveman pitfall","t":"#capability/workflow","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"#context/microservices","rel":"context"},{"s":"Grains of Sand pitfall","t":"#context/modularity","rel":"context"},{"s":"Grains of Sand pitfall","t":"#context/service_granularity","rel":"context"},{"s":"Grains of Sand pitfall","t":"#capability/adaptability","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"#capability/cost","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"#capability/data_consistency","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"#capability/data_integrity","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"#capability/initial_time_to_market","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"#capability/simplicity","rel":"degraded"},{"s":"Grains of Sand pitfall","t":"Microservice All the Things pitfall","rel":"link"},{"s":"Grains of Sand pitfall","t":"Choreography pattern","rel":"link"},{"s":"Grains of Sand pitfall","t":"Orchestration pattern","rel":"link"},{"s":"Grains of Sand pitfall","t":"Compensating Updates pattern","rel":"link"},{"s":"Grains of Sand pitfall","t":"Service Sharding pattern","rel":"link"},{"s":"Implicit Workflow State pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Implicit Workflow State pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Implicit Workflow State pattern","t":"#context/microservices","rel":"context"},{"s":"Implicit Workflow State pattern","t":"#context/workflow","rel":"context"},{"s":"Implicit Workflow State pattern","t":"#capability/testability","rel":"improved"},{"s":"Implicit Workflow State pattern","t":"#capability/workflow","rel":"improved"},{"s":"Implicit Workflow State pattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Implicit Workflow State pattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Implicit Workflow State pattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Implicit Workflow State pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Implicit Workflow State pattern","t":"Cross-Cutting State pattern","rel":"link"},{"s":"Implicit Workflow State pattern","t":"Explicit Workflow State pattern","rel":"link"},{"s":"Implicit Workflow State pattern","t":"Front Controller pattern","rel":"link"},{"s":"Key-Based Event Contract pattern","t":"#context/contracts","rel":"context"},{"s":"Key-Based Event Contract pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Key-Based Event Contract pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Key-Based Event Contract pattern","t":"#context/microservices","rel":"context"},{"s":"Key-Based Event Contract pattern","t":"#capability/bandwidth_usage","rel":"improved"},{"s":"Key-Based Event Contract pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Key-Based Event Contract pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Key-Based Event Contract pattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Key-Based Event Contract pattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Key-Based Event Contract pattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Key-Based Event Contract pattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Key-Based Event Contract pattern","t":"#capability/scalability","rel":"degraded"},{"s":"Key-Based Event Contract pattern","t":"#capability/throughput","rel":"degraded"},{"s":"Key-Based Event Contract pattern","t":"Cache Aside pattern","rel":"link"},{"s":"Key-Based Event Contract pattern","t":"Contextual Events pattern","rel":"link"},{"s":"Key-Based Event Contract pattern","t":"Data-Based Event Contract pattern","rel":"link"},{"s":"Key-Based Event Contract pattern","t":"Extensible Events pattern","rel":"link"},{"s":"Microservice All the Things pitfall","t":"#context/microservices","rel":"context"},{"s":"Microservice All the Things pitfall","t":"#context/modularity","rel":"context"},{"s":"Microservice All the Things pitfall","t":"#context/service_granularity","rel":"context"},{"s":"Microservice All the Things pitfall","t":"#capability/cost","rel":"degraded"},{"s":"Microservice All the Things pitfall","t":"#capability/data_consistency","rel":"degraded"},{"s":"Microservice All the Things pitfall","t":"#capability/data_integrity","rel":"degraded"},{"s":"Microservice All the Things pitfall","t":"#capability/simplicity","rel":"degraded"},{"s":"Microservice All the Things pitfall","t":"Choreography pattern","rel":"link"},{"s":"Microservice All the Things pitfall","t":"Orchestration pattern","rel":"link"},{"s":"Microservice All the Things pitfall","t":"Compensating Updates pattern","rel":"link"},{"s":"Microservice All the Things pitfall","t":"Grains of Sand pitfall","rel":"link"},{"s":"Multi-Broker pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Multi-Broker pattern","t":"#context/high_volume_processing","rel":"context"},{"s":"Multi-Broker pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Multi-Broker pattern","t":"#context/microservices","rel":"context"},{"s":"Multi-Broker pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Multi-Broker pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Multi-Broker pattern","t":"#capability/scalability","rel":"improved"},{"s":"Multi-Broker pattern","t":"#capability/throughput","rel":"improved"},{"s":"Multi-Broker pattern","t":"#capability/cost","rel":"degraded"},{"s":"Multi-Broker pattern","t":"#capability/message_processing_order","rel":"degraded"},{"s":"Multi-Broker pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Multi-Broker pattern","t":"Thread Delegate pattern","rel":"link"},{"s":"Multi-Broker pattern","t":"Supervisor Consumer pattern","rel":"link"},{"s":"Nexus Architecture pattern","t":"#context/microservices","rel":"context"},{"s":"Nexus Architecture pattern","t":"#influence/granularity","rel":"influence"},{"s":"Nexus Architecture pattern","t":"#influence/quantum","rel":"influence"},{"s":"Nexus Architecture pattern","t":"#capability/adaptability","rel":"improved"},{"s":"Nexus Architecture pattern","t":"#capability/evolvability","rel":"improved"},{"s":"Nexus Architecture pattern","t":"#capability/maintainability","rel":"improved"},{"s":"Nexus Architecture pattern","t":"#capability/reusability","rel":"improved"},{"s":"Nexus Architecture pattern","t":"#capability/testability","rel":"improved"},{"s":"Nexus Architecture pattern","t":"#capability/cost","rel":"degraded"},{"s":"Nexus Architecture pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Orchestration pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Orchestration pattern","t":"#context/microservices","rel":"context"},{"s":"Orchestration pattern","t":"#context/workflow","rel":"context"},{"s":"Orchestration pattern","t":"#aka/mediator","rel":"aka"},{"s":"Orchestration pattern","t":"#influence/quantum/contract","rel":"influence"},{"s":"Orchestration pattern","t":"#influence/quantum/static","rel":"influence"},{"s":"Orchestration pattern","t":"#influence/quantum/dynamic","rel":"influence"},{"s":"Orchestration pattern","t":"#influence/transactionality","rel":"influence"},{"s":"Orchestration pattern","t":"#influence/granularity","rel":"influence"},{"s":"Orchestration pattern","t":"#influence/communication","rel":"influence"},{"s":"Orchestration pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Orchestration pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Orchestration pattern","t":"#capability/debuggability","rel":"improved"},{"s":"Orchestration pattern","t":"#capability/error_handling","rel":"improved"},{"s":"Orchestration pattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/availability","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/fault_tolerance","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/reusability","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/scalability","rel":"degraded"},{"s":"Orchestration pattern","t":"#capability/throughput","rel":"degraded"},{"s":"Orchestration pattern","t":"Choreography pattern","rel":"link"},{"s":"Orchestration pattern","t":"Compensating Updates pattern","rel":"link"},{"s":"Overcentralization antipattern","t":"#context/data","rel":"context"},{"s":"Overcentralization antipattern","t":"#context/integration_architecture","rel":"context"},{"s":"Overcentralization antipattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Overcentralization antipattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Overcentralization antipattern","t":"#capability/workflow","rel":"improved"},{"s":"Overcentralization antipattern","t":"#capability/agility","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/availability","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/deployability","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/fault_tolerance","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/maintainability","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/modularity","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/reusability","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/scalability","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Overcentralization antipattern","t":"#capability/testability","rel":"degraded"},{"s":"Read-Through Write-Through Cache pattern","t":"#context/caching","rel":"context"},{"s":"Read-Through Write-Through Cache pattern","t":"#context/data","rel":"context"},{"s":"Read-Through Write-Through Cache pattern","t":"#context/microservices","rel":"context"},{"s":"Read-Through Write-Through Cache pattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Read-Through Write-Through Cache pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Read-Through Write-Through Cache pattern","t":"#capability/simplicity","rel":"improved"},{"s":"Read-Through Write-Through Cache pattern","t":"#capability/flexibility","rel":"degraded"},{"s":"Read-Through Write-Through Cache pattern","t":"Command Query Responsibility Segregation pattern","rel":"link"},{"s":"Read-Through Write-Through Cache pattern","t":"Cache Aside pattern","rel":"link"},{"s":"Read-Through Write-Through Cache pattern","t":"Event Sourcing pattern","rel":"link"},{"s":"Service Sharding pattern","t":"#context/distributed_architecture","rel":"context"},{"s":"Service Sharding pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Service Sharding pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Service Sharding pattern","t":"#context/microservices","rel":"context"},{"s":"Service Sharding pattern","t":"#context/service_granularity","rel":"context"},{"s":"Service Sharding pattern","t":"#context/workflow","rel":"context"},{"s":"Service Sharding pattern","t":"#influence/granularity","rel":"influence"},{"s":"Service Sharding pattern","t":"#influence/quantum/dynamic","rel":"influence"},{"s":"Service Sharding pattern","t":"#influence/quantum/contract","rel":"influence"},{"s":"Service Sharding pattern","t":"#capability/data_consistency","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/data_integrity","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/domain_alignment","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/scalability","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/simplicity","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/testability","rel":"improved"},{"s":"Service Sharding pattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Service Sharding pattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Service Sharding pattern","t":"Compensating Updates pattern","rel":"link"},{"s":"Service Sharding pattern","t":"Orchestration pattern","rel":"link"},{"s":"Service Sharding pattern","t":"Choreography pattern","rel":"link"},{"s":"Stamp Coupling antipattern","t":"#context/contracts","rel":"context"},{"s":"Stamp Coupling antipattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Stamp Coupling antipattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Stamp Coupling antipattern","t":"#context/microservices","rel":"context"},{"s":"Stamp Coupling antipattern","t":"#capability/adaptability","rel":"improved"},{"s":"Stamp Coupling antipattern","t":"#capability/evolvability","rel":"improved"},{"s":"Stamp Coupling antipattern","t":"#capability/simplicity","rel":"improved"},{"s":"Stamp Coupling antipattern","t":"#capability/bandwidth_usage","rel":"degraded"},{"s":"Stamp Coupling antipattern","t":"Contextual Events pattern","rel":"link"},{"s":"Stamp Coupling antipattern","t":"Data-Based Event Contract pattern","rel":"link"},{"s":"Stamp Coupling antipattern","t":"Extensible Events pattern","rel":"link"},{"s":"Stamp Coupling antipattern","t":"Key-Based Event Contract pattern","rel":"link"},{"s":"Stovepipe Architecture antipattern","t":"#context/architectural_styles","rel":"context"},{"s":"Stovepipe Architecture antipattern","t":"#context/iterative_architecture","rel":"context"},{"s":"Stovepipe Architecture antipattern","t":"#context/monolithic_architectures","rel":"context"},{"s":"Stovepipe Architecture antipattern","t":"#capability/cost","rel":"improved"},{"s":"Stovepipe Architecture antipattern","t":"#capability/initial_time_to_market","rel":"improved"},{"s":"Stovepipe Architecture antipattern","t":"#capability/adaptability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/agility","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/availability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/deployability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/domain_alignment","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/elasticity","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/evolvability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/fault_tolerance","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/maintainability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/responsiveness","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/scalability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"#capability/testability","rel":"degraded"},{"s":"Stovepipe Architecture antipattern","t":"Architecture by Implication antipattern","rel":"link"},{"s":"Stovepipe Architecture antipattern","t":"Grains of Sand pitfall","rel":"link"},{"s":"Supervisor Consumer pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Supervisor Consumer pattern","t":"#context/high_volume_processing","rel":"context"},{"s":"Supervisor Consumer pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Supervisor Consumer pattern","t":"#context/microservices","rel":"context"},{"s":"Supervisor Consumer pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Supervisor Consumer pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Supervisor Consumer pattern","t":"#capability/scalability","rel":"improved"},{"s":"Supervisor Consumer pattern","t":"#capability/throughput","rel":"improved"},{"s":"Supervisor Consumer pattern","t":"#capability/message_processing_order","rel":"degraded"},{"s":"Supervisor Consumer pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Supervisor Consumer pattern","t":"Multi-Broker pattern","rel":"link"},{"s":"Supervisor Consumer pattern","t":"Thread Delegate pattern","rel":"link"},{"s":"Thread Delegate pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Thread Delegate pattern","t":"#context/high_volume_processing","rel":"context"},{"s":"Thread Delegate pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Thread Delegate pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Thread Delegate pattern","t":"#capability/message_processing_order","rel":"improved"},{"s":"Thread Delegate pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Thread Delegate pattern","t":"#capability/scalability","rel":"improved"},{"s":"Thread Delegate pattern","t":"#capability/throughput","rel":"improved"},{"s":"Thread Delegate pattern","t":"#capability/cost","rel":"degraded"},{"s":"Thread Delegate pattern","t":"#capability/error_handling","rel":"degraded"},{"s":"Thread Delegate pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Thread Delegate pattern","t":"Multi-Broker pattern","rel":"link"},{"s":"Thread Delegate pattern","t":"Supervisor Consumer pattern","rel":"link"},{"s":"Thread Delegate pattern","t":"Ambulance pattern","rel":"link"},{"s":"Thread Delegate pattern","t":"Workflow Event pattern","rel":"link"},{"s":"Workflow Event pattern","t":"#context/event_driven_architecture","rel":"context"},{"s":"Workflow Event pattern","t":"#context/message_based_architectures","rel":"context"},{"s":"Workflow Event pattern","t":"#context/microservices","rel":"context"},{"s":"Workflow Event pattern","t":"#context/workflow","rel":"context"},{"s":"Workflow Event pattern","t":"#capability/elasticity","rel":"improved"},{"s":"Workflow Event pattern","t":"#capability/error_handling","rel":"improved"},{"s":"Workflow Event pattern","t":"#capability/responsiveness","rel":"improved"},{"s":"Workflow Event pattern","t":"#capability/scalability","rel":"improved"},{"s":"Workflow Event pattern","t":"#capability/message_processing_order","rel":"degraded"},{"s":"Workflow Event pattern","t":"#capability/simplicity","rel":"degraded"},{"s":"Workflow Event pattern","t":"Thread Delegate pattern","rel":"link"}]};
-const col = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
-const KIND_COLOR = {}, REL_COLOR = {}, THEME = {};
-function readTheme(){ Object.assign(KIND_COLOR, {"note:pattern":col('--note'),"note:antipattern":col('--anti'),"note:pitfall":col('--pit'),"note:unresolved":col('--unres'),
-  "tag:context":col('--ctx'),"tag:capability":col('--cap'),"tag:author":col('--auth'),"tag:influence":col('--infl'),"tag:aka":col('--aka')});
-  Object.assign(REL_COLOR, {link:col('--link'),context:col('--ctx'),improved:col('--imp'),degraded:col('--deg'),author:col('--auth'),influence:col('--infl'),aka:col('--aka')});
-  Object.assign(THEME, {label:col('--label'), ring:col('--ring'), ringSoft:col('--ring-soft')}); }
-const themeToggle = document.getElementById('theme-toggle');
-const systemLight = matchMedia('(prefers-color-scheme: light)');
-const isLightTheme = () => document.documentElement.dataset.theme === 'light' || (!document.documentElement.dataset.theme && systemLight.matches);
-function updateThemeToggle(){
-  const light = isLightTheme();
-  themeToggle.textContent = light ? 'Use dark theme' : 'Use light theme';
-  themeToggle.setAttribute('aria-pressed', String(light));
-}
-function setTheme(theme){
-  document.documentElement.dataset.theme = theme;
-  readTheme();
-  updateThemeToggle();
-}
-themeToggle.addEventListener('click',()=>setTheme(isLightTheme() ? 'dark' : 'light'));
-readTheme();
-updateThemeToggle();
-systemLight.addEventListener('change',()=>{ if(!document.documentElement.dataset.theme){ readTheme(); updateThemeToggle(); } });
-const KIND_LABEL = {"note:pattern":"Pattern","note:antipattern":"Antipattern","note:pitfall":"Pitfall","note:unresolved":"Unresolved link","tag:context":"Context tag","tag:capability":"Capability tag","tag:author":"Author tag","tag:influence":"Influence tag","tag:aka":"Alias tag"};
-
-const byId = new Map();
-const W0 = innerWidth, H0 = innerHeight;
-DATA.nodes.forEach((n,i)=>{ const a=i*2.399, r=Math.sqrt(i)*30; n.x=W0/2+Math.cos(a)*r; n.y=H0/2+Math.sin(a)*r; n.vx=n.vy=0; n.fixed=false; n.deg=0; byId.set(n.id,n); });
-DATA.links.forEach(l=>{ l.source=byId.get(l.s); l.target=byId.get(l.t); l.source.deg++; l.target.deg++; });
-DATA.nodes.forEach(n=>{ n.r = 2.5 + Math.sqrt(n.deg)*1.1; });
-
-const enabled = {}; document.querySelectorAll('#panel input[data-k]').forEach(cb=>{ enabled[cb.dataset.k]=cb.checked; cb.onchange=()=>{ enabled[cb.dataset.k]=cb.checked; rebuild(); }; });
-let nodes=[], links=[], adj=new Map();
-function rebuild(){
-  nodes = DATA.nodes.filter(n=>enabled[n.kind]);
-  const set = new Set(nodes);
-  links = DATA.links.filter(l=>set.has(l.source)&&set.has(l.target));
-  adj = new Map(); nodes.forEach(n=>adj.set(n,new Set()));
-  links.forEach(l=>{ adj.get(l.source).add(l.target); adj.get(l.target).add(l.source); });
-  document.getElementById('stat').textContent = `${nodes.length} nodes · ${links.length} edges`;
-  alpha = Math.max(alpha, .6);
-}
-
-// ---------- simulation ----------
-let alpha = 1;
-const P = { repel: 10, dist: 120, center: .12 };
-function tick(){
-  if (alpha < .003) return;
-  const n = nodes.length; if(!n) return;
-  const k = P.repel * 700;
-  // Barnes-Hut is overkill for <150 nodes; O(n^2)
-  for (let i=0;i<n;i++){ const a=nodes[i];
-    for (let j=i+1;j<n;j++){ const b=nodes[j];
-      let dx=b.x-a.x, dy=b.y-a.y, d2=dx*dx+dy*dy; if(d2<1){dx=Math.random()-.5;dy=Math.random()-.5;d2=1;}
-      if (d2 > 1000000) continue;
-      const f = k/d2, d=Math.sqrt(d2), fx=dx/d*f, fy=dy/d*f;
-      a.vx-=fx*alpha; a.vy-=fy*alpha; b.vx+=fx*alpha; b.vy+=fy*alpha; } }
-  for (const l of links){ const a=l.source,b=l.target;
-    let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
-    const target = P.dist * (l.rel==='link'?1:.75);
-    const f = (d-target)/d*.08 * alpha;
-    const wa = b.deg/(a.deg+b.deg), wb = 1-wa;
-    a.vx+=dx*f*wa; a.vy+=dy*f*wa; b.vx-=dx*f*wb; b.vy-=dy*f*wb; }
-  const cx=innerWidth/2, cy=(innerHeight+64)/2;
-  for (const p of nodes){
-    p.vx += (cx-p.x)*P.center*.01*alpha; p.vy += (cy-p.y)*P.center*.01*alpha;
-    if (p.fixed || p===dragging){ p.vx=p.vy=0; continue; }
-    p.vx*=.6; p.vy*=.6; p.x+=p.vx; p.y+=p.vy; }
-  alpha *= .995;
-}
-
-// ---------- view / render ----------
-const cv=document.getElementById('c'), ctx=cv.getContext('2d');
-let dpr=devicePixelRatio||1, tx=0, ty=0, scale=1;
-function resize(){ dpr=devicePixelRatio||1; cv.width=innerWidth*dpr; cv.height=innerHeight*dpr; cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px'; }
-addEventListener('resize',resize); resize();
-let hover=null, selected=null, dragging=null, query='';
-const showArrows=document.getElementById('arrows'), showLabels=document.getElementById('labels');
-
-function draw(){
-  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.fillStyle=col('--bg'); ctx.fillRect(0,0,innerWidth,innerHeight);
-  ctx.translate(tx,ty); ctx.scale(scale,scale);
-  const focus = hover||selected;
-  const nb = focus ? adj.get(focus) : null;
-  const q = query.toLowerCase();
-  const matches = q ? new Set(nodes.filter(n=>n.label.toLowerCase().includes(q))) : null;
-  // edges
-  for (const l of links){
-    const lit = focus ? (l.source===focus||l.target===focus) : true;
-    ctx.globalAlpha = focus ? (lit? .95 : .06) : (matches? .12 : .55);
-    ctx.strokeStyle = REL_COLOR[l.rel]||'#666';
-    ctx.lineWidth = (l.rel==='link'?1.2:.9)/scale*(lit&&focus?1.6:1);
-    ctx.beginPath(); ctx.moveTo(l.source.x,l.source.y); ctx.lineTo(l.target.x,l.target.y); ctx.stroke();
-    if (showArrows.checked && (lit||!focus)){
-      const dx=l.target.x-l.source.x, dy=l.target.y-l.source.y, d=Math.hypot(dx,dy)||1, ux=dx/d, uy=dy/d;
-      const ex=l.target.x-ux*(l.target.r+2), ey=l.target.y-uy*(l.target.r+2), s=6/scale;
-      ctx.fillStyle=ctx.strokeStyle; ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-ux*s-uy*s*.5,ey-uy*s+ux*s*.5); ctx.lineTo(ex-ux*s+uy*s*.5,ey-uy*s-ux*s*.5); ctx.closePath(); ctx.fill();
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <meta name="color-scheme"
+        content="dark light">
+  <title>Software Architecture Patterns, Antipatterns, and Pitfalls — graph view</title>
+  <style>
+    :root {
+      --bg: #1e1e1e;
+      --panel: #262626;
+      --border: #3a3a3a;
+      --text: #dcddde;
+      --muted: #8a8a8a;
+      --note: #a882ff;
+      --anti: #ff7b72;
+      --pit: #ffa657;
+      --unres: #5c5c5c;
+      --ctx: #3fb0e6;
+      --cap: #7bd88f;
+      --auth: #e0b25a;
+      --infl: #e57bd0;
+      --aka: #9aa;
+      --imp: #4cc26c;
+      --deg: #e05a5a;
+      --link: #4f4f4f;
+      --input-bg: #1a1a1a;
+      --btn: #333;
+      --btn-hover: #3d3d3d;
+      --hi: #fff;
+      --accent: #c9b6ff;
+      --chip: #2e2e2e;
+      --chip-hover: #3a3a3a;
+      --label: #e6e6e6;
+      --ring: #fff;
+      --ring-soft: rgba(255, 255, 255, .5);
+      --shadow: rgba(0, 0, 0, .4);
+      color-scheme: dark
     }
-  }
-  // nodes
-  ctx.globalAlpha=1;
-  for (const n of nodes){
-    const lit = focus ? (n===focus||nb.has(n)) : (matches ? matches.has(n) : true);
-    ctx.globalAlpha = lit ? 1 : .12;
-    ctx.fillStyle = KIND_COLOR[n.kind];
-    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill();
-    if (n===selected||n===hover){ ctx.strokeStyle=THEME.ring; ctx.lineWidth=2/scale; ctx.stroke(); }
-    if (n.fixed){ ctx.strokeStyle=THEME.ringSoft; ctx.lineWidth=1/scale; ctx.beginPath(); ctx.arc(n.x,n.y,n.r+3/scale,0,Math.PI*2); ctx.stroke(); }
-  }
-  // labels
-  const labelAll = showLabels.checked && scale > .75;
-  ctx.textAlign='center'; ctx.textBaseline='top';
-  for (const n of nodes){
-    const lit = focus ? (n===focus||nb.has(n)) : (matches ? matches.has(n) : true);
-    if (!(labelAll || n===hover || n===selected || (focus&&lit) || (matches&&lit))) continue;
-    const fs = Math.max(10/scale, 11);
-    ctx.font = `${n===focus?'600 ':''}${fs}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
-    ctx.globalAlpha = lit ? (labelAll? .85:1) : .1;
-    ctx.fillStyle = n.kind.startsWith('tag') ? KIND_COLOR[n.kind] : THEME.label;
-    ctx.fillText(n.label, n.x, n.y+n.r+3/scale);
-  }
-  ctx.globalAlpha=1;
-}
-function loop(){ tick(); draw(); requestAnimationFrame(loop); }
 
-// ---------- interaction ----------
-const toWorld = (px,py)=>[(px-tx)/scale,(py-ty)/scale];
-function pick(px,py){ const [x,y]=toWorld(px,py); let best=null,bd=Infinity;
-  for (const n of nodes){ const d=Math.hypot(n.x-x,n.y-y); if(d<Math.max(n.r,6/scale)+3/scale && d<bd){best=n;bd=d;} } return best; }
-let panning=false, px0=0, py0=0, moved=false;
-cv.addEventListener('mousedown',e=>{ const n=pick(e.clientX,e.clientY); moved=false; px0=e.clientX; py0=e.clientY;
-  if(n){ dragging=n; alpha=Math.max(alpha,.3);} else { panning=true; cv.classList.add('drag'); } });
-addEventListener('mousemove',e=>{
-  if (dragging){ const [x,y]=toWorld(e.clientX,e.clientY); dragging.x=x; dragging.y=y; alpha=Math.max(alpha,.3); moved=true; return; }
-  if (panning){ tx+=e.clientX-px0; ty+=e.clientY-py0; px0=e.clientX; py0=e.clientY; moved=true; return; }
-  hover = pick(e.clientX,e.clientY); cv.style.cursor = hover?'pointer':'grab'; });
-addEventListener('mouseup',e=>{
-  if (dragging){ if(moved) dragging.fixed=true; else select(dragging); dragging=null; }
-  panning=false; cv.classList.remove('drag'); });
-cv.addEventListener('dblclick',e=>{ const n=pick(e.clientX,e.clientY); if(n){ n.fixed=false; alpha=Math.max(alpha,.3);} });
-cv.addEventListener('wheel',e=>{ e.preventDefault(); const f=Math.exp(-e.deltaY*.0015); const [wx,wy]=toWorld(e.clientX,e.clientY);
-  scale=Math.min(6,Math.max(.15,scale*f)); tx=e.clientX-wx*scale; ty=e.clientY-wy*scale; },{passive:false});
-// touch: basic pan/drag
-let lastTouch=null;
-cv.addEventListener('touchstart',e=>{ const t=e.touches[0]; lastTouch=[t.clientX,t.clientY]; const n=pick(t.clientX,t.clientY); if(n) dragging=n; else panning=true; },{passive:true});
-cv.addEventListener('touchmove',e=>{ const t=e.touches[0]; if(dragging){ const [x,y]=toWorld(t.clientX,t.clientY); dragging.x=x;dragging.y=y; alpha=Math.max(alpha,.3);} else if(panning&&lastTouch){ tx+=t.clientX-lastTouch[0]; ty+=t.clientY-lastTouch[1]; } lastTouch=[t.clientX,t.clientY]; e.preventDefault(); },{passive:false});
-cv.addEventListener('touchend',()=>{ if(dragging){ select(dragging); dragging=null;} panning=false; });
+    :root[data-theme="light"] {
+      --bg: #f6f6f4;
+      --panel: #ffffff;
+      --border: #d6d6d2;
+      --text: #1f1f1f;
+      --muted: #666;
+      --note: #7247e0;
+      --anti: #d23f3a;
+      --pit: #cf6f10;
+      --unres: #aaa;
+      --ctx: #1a85bd;
+      --cap: #2c9447;
+      --auth: #a97a12;
+      --infl: #b83d97;
+      --aka: #5f7c7c;
+      --imp: #2c9447;
+      --deg: #cc3434;
+      --link: #c2c2c2;
+      --input-bg: #fafafa;
+      --btn: #f0f0ee;
+      --btn-hover: #e4e4e0;
+      --hi: #000;
+      --accent: #5b36c4;
+      --chip: #f3f0fb;
+      --chip-hover: #e6e0f7;
+      --label: #2a2a2a;
+      --ring: #111;
+      --ring-soft: rgba(0, 0, 0, .4);
+      --shadow: rgba(0, 0, 0, .12);
+      color-scheme: light
+    }
+    }
 
-const info=document.getElementById('info'), infoBody=document.getElementById('infoBody');
-document.getElementById('close').onclick=()=>{ selected=null; info.style.display='none'; };
-function select(n){ selected=n; if(!n){ info.style.display='none'; return; }
-  const out = DATA.links.filter(l=>l.source===n), inn = DATA.links.filter(l=>l.target===n);
-  const group=(arr,rel,title,cls='')=>{ const xs=arr.filter(l=>l.rel===rel); if(!xs.length) return '';
-    return `<h2>${title} (${xs.length})</h2><ul>${xs.map(l=>`<li class="${cls}" data-id="${esc(l.target===n?l.source.id:l.target.id)}">${esc(l.target===n?l.source.label:l.target.label)}</li>`).join('')}</ul>`; };
-  let h = `<h1>${esc(n.label)}</h1><div class="kind">${KIND_LABEL[n.kind]} · ${n.deg} connections</div>`;
-  if (n.kind.startsWith('note')){
-    h += group(out,'author','Author') + group(out,'context','Contexts') + group(out,'improved','Improves','imp') + group(out,'degraded','Degrades','deg')
-       + group(out,'influence','Influences') + group(out,'aka','Also known as') + group(out,'link','Links to') + group(inn,'link','Linked from');
-  } else {
-    h += group(inn,'improved','Improved by','imp') + group(inn,'degraded','Degraded by','deg')
-       + group(inn,'context','Used in') + group(inn,'influence','Influences') + group(inn,'aka','Alias of');
-  }
-  infoBody.innerHTML=h; info.style.display='block';
-  infoBody.querySelectorAll('li').forEach(li=>li.onclick=()=>{ const t=byId.get(li.dataset.id); if(t){ if(!enabled[t.kind]){ const cb=document.querySelector(`[data-k="${t.kind}"]`); cb.checked=true; enabled[t.kind]=true; rebuild(); } select(t); centerOn(t);} });
-}
-const esc = s => s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function centerOn(n){ tx=innerWidth/2-n.x*scale; ty=(innerHeight+64)/2-n.y*scale; }
-document.getElementById('q').addEventListener('input',e=>{ query=e.target.value.trim(); });
-document.getElementById('q').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const q=query.toLowerCase(); const n=nodes.find(x=>x.label.toLowerCase().includes(q)); if(n){ select(n); centerOn(n);} } });
-document.getElementById('repel').oninput=e=>{ P.repel=+e.target.value; alpha=Math.max(alpha,.5); };
-document.getElementById('dist').oninput=e=>{ P.dist=+e.target.value; alpha=Math.max(alpha,.5); };
-document.getElementById('center').oninput=e=>{ P.center=e.target.value/100; alpha=Math.max(alpha,.5); };
-document.getElementById('reheat').onclick=()=>{ nodes.forEach(n=>n.fixed=false); alpha=1; };
-function fit(){ if(!nodes.length) return; let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
-  nodes.forEach(n=>{x0=Math.min(x0,n.x);y0=Math.min(y0,n.y);x1=Math.max(x1,n.x);y1=Math.max(y1,n.y);});
-  const pad=80, w=x1-x0+pad*2, h=y1-y0+pad*2; scale=Math.min(innerWidth/w, (innerHeight-64)/h, 2);
-  tx=innerWidth/2-(x0+x1)/2*scale; ty=(innerHeight+64)/2-(y0+y1)/2*scale; }
-document.getElementById('fit').onclick=fit;
-addEventListener('keydown',e=>{ if(e.key==='Escape'){ selected=null; info.style.display='none'; } });
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme]) {
+        --bg: #f6f6f4;
+        --panel: #ffffff;
+        --border: #d6d6d2;
+        --text: #1f1f1f;
+        --muted: #666;
+        --note: #7247e0;
+        --anti: #d23f3a;
+        --pit: #cf6f10;
+        --unres: #aaa;
+        --ctx: #1a85bd;
+        --cap: #2c9447;
+        --auth: #a97a12;
+        --infl: #b83d97;
+        --aka: #5f7c7c;
+        --imp: #2c9447;
+        --deg: #cc3434;
+        --link: #c2c2c2;
+        --input-bg: #fafafa;
+        --btn: #f0f0ee;
+        --btn-hover: #e4e4e0;
+        --hi: #000;
+        --accent: #5b36c4;
+        --chip: #f3f0fb;
+        --chip-hover: #e6e0f7;
+        --label: #2a2a2a;
+        --ring: #111;
+        --ring-soft: rgba(0, 0, 0, .4);
+        --shadow: rgba(0, 0, 0, .12);
+        color-scheme: light
+      }
+    }
 
-rebuild();
-// pre-settle so the first frame is not a blob
-for (let i=0;i<700;i++) tick();
-fit(); alpha=.4;
-loop();
-</script>
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+      overflow: hidden
+    }
+
+    #c {
+      position: absolute;
+      inset: 0;
+      display: block;
+      cursor: grab
+    }
+
+    #c.drag {
+      cursor: grabbing
+    }
+
+    #panel {
+      position: absolute;
+      top: 88px;
+      left: 12px;
+      width: 270px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 16px var(--shadow);
+      max-height: calc(100% - 100px);
+      overflow: auto
+    }
+
+    #panel h1 {
+      font-size: 14px;
+      margin: 0 0 8px;
+      font-weight: 600
+    }
+
+    #panel h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin: 12px 0 6px;
+      font-weight: 600
+    }
+
+    #panel label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      cursor: pointer;
+      user-select: none
+    }
+
+    #panel input[type=search] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 6px 8px;
+      outline: none
+    }
+
+    #panel input[type=search]:focus {
+      border-color: var(--note)
+    }
+
+    #panel input[type=range] {
+      width: 100%
+    }
+
+    .sw {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .line {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      flex: none
+    }
+
+    .stat {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    #info {
+      position: absolute;
+      top: 88px;
+      right: 12px;
+      width: 300px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 16px var(--shadow);
+      max-height: calc(100% - 100px);
+      overflow: auto;
+      display: none
+    }
+
+    #info h1 {
+      font-size: 15px;
+      margin: 0 0 4px;
+      font-weight: 600;
+      word-break: break-word
+    }
+
+    #info .kind {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px
+    }
+
+    #info h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin: 10px 0 4px;
+      font-weight: 600
+    }
+
+    #info ul {
+      list-style: none;
+      margin: 0;
+      padding: 0
+    }
+
+    #info li {
+      padding: 2px 0;
+      cursor: pointer;
+      word-break: break-word
+    }
+
+    #info li:hover {
+      color: var(--hi);
+      text-decoration: underline
+    }
+
+    #info li.imp::before {
+      content: "▲ ";
+      color: var(--imp)
+    }
+
+    #info li.deg::before {
+      content: "▼ ";
+      color: var(--deg)
+    }
+
+    #info .close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 16px
+    }
+
+    #help {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    button {
+      background: var(--btn);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px
+    }
+
+    button:hover {
+      background: var(--btn-hover)
+    }
+
+    .row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px
+    }
+
+    #hdr {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 76px;
+      background: rgb(248 247 242 / 92%);
+      border-bottom: 1px solid #dfe3df;
+      z-index: 2
+    }
+
+    #hdr .navigation {
+      width: min(1120px, calc(100% - 48px));
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin: 0 auto
+    }
+
+    #hdr .wordmark {
+      color: #172331;
+      font-family: Arial, sans-serif;
+      font-size: 12.16px;
+      font-weight: 700;
+      letter-spacing: .13em;
+      text-decoration: none;
+      text-transform: uppercase
+    }
+
+    #hdr ul {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 18.4px;
+      list-style: none;
+      margin: 0;
+      padding: 0
+    }
+
+    #hdr li a {
+      color: #526170;
+      font-family: Arial, sans-serif;
+      font-size: 13.6px;
+      text-decoration: none
+    }
+
+    #hdr li a:hover,
+    #hdr li a:focus-visible,
+    #hdr li a[aria-current="page"] {
+      color: #a53e20;
+      text-decoration: underline;
+      text-underline-offset: .3em
+    }
+
+    @media (max-width:700px) {
+      #hdr {
+        height: auto
+      }
+
+      #hdr .navigation {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px 0
+      }
+
+      #hdr ul {
+        justify-content: flex-start
+      }
+
+      #panel,
+      #info {
+        top: 120px;
+        max-height: calc(100% - 132px)
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header id="hdr">
+    <nav class="navigation"
+         aria-label="Primary navigation">
+      <a class="wordmark"
+         href="index.html">SAPA</a>
+      <ul>
+        <li><a href="index.html#about">About the book</a></li>
+        <li><a href="index.html#authors">Authors</a></li>
+        <li><a href="SAPA-graph-lightdark.html"
+             aria-current="page">Visual guide</a></li>
+        <li><a href="index.html#order">Order</a></li>
+      </ul>
+    </nav>
+  </header>
+  <canvas id="c"></canvas>
+  <div id="panel">
+    <h1>Graph controls</h1>
+    <div class="row"><button id="theme-toggle"
+              type="button"
+              aria-pressed="false">Use light theme</button></div>
+    <input id="q"
+           type="search"
+           placeholder="Search nodes…">
+    <div class="stat"
+         id="stat"></div>
+    <h2>Nodes</h2>
+    <label><input type="checkbox"
+             data-k="note:pattern"
+             checked><span class="sw"
+            style="background:var(--note)"></span>Patterns</label>
+    <label><input type="checkbox"
+             data-k="note:antipattern"
+             checked><span class="sw"
+            style="background:var(--anti)"></span>Antipatterns</label>
+    <label><input type="checkbox"
+             data-k="note:pitfall"
+             checked><span class="sw"
+            style="background:var(--pit)"></span>Pitfalls</label>
+    <label><input type="checkbox"
+             data-k="tag:context"
+             checked><span class="sw"
+            style="background:var(--ctx)"></span>#context tags</label>
+    <label><input type="checkbox"
+             data-k="tag:capability"
+             checked><span class="sw"
+            style="background:var(--cap)"></span>#capability tags</label>
+    <label><input type="checkbox"
+             data-k="tag:influence"><span class="sw"
+            style="background:var(--infl)"></span>#influence tags</label>
+    <label><input type="checkbox"
+             data-k="tag:aka"><span class="sw"
+            style="background:var(--aka)"></span>#aka tags</label>
+    <h2>Edges</h2>
+    <label><span class="line"
+            style="background:var(--link)"></span>[[wikilink]]</label>
+    <label><span class="line"
+            style="background:var(--ctx);opacity:.7"></span>note → context</label>
+    <label><span class="line"
+            style="background:var(--imp)"></span>improved capability</label>
+    <label><span class="line"
+            style="background:var(--deg)"></span>degraded capability</label>
+    <label><input type="checkbox"
+             id="arrows"> Show arrows</label>
+    <label><input type="checkbox"
+             id="labels"
+             checked> Always show labels</label>
+    <h2>Forces</h2>
+    <label>Repel <input type="range"
+             id="repel"
+             min="1"
+             max="30"
+             value="10"></label>
+    <label>Link distance <input type="range"
+             id="dist"
+             min="40"
+             max="400"
+             value="120"></label>
+    <label>Center <input type="range"
+             id="center"
+             min="0"
+             max="100"
+             value="12"></label>
+    <div class="row"><button id="reheat">Re-layout</button><button id="fit">Fit</button></div>
+  </div>
+  <div id="info"><span class="close"
+          id="close">×</span>
+    <div id="infoBody"></div>
+  </div>
+  <div id="help">drag to pan · scroll to zoom · drag nodes · click for details · double-click to release</div>
+  <script>
+    const DATA = { "nodes": [{ "id": "Ambulance pattern", "kind": "note:pattern", "label": "Ambulance pattern" }, { "id": "#context/event_driven_architecture", "kind": "tag:context", "label": "#context/event_driven_architecture" }, { "id": "#context/message_based_architectures", "kind": "tag:context", "label": "#context/message_based_architectures" }, { "id": "#aka/carpool", "kind": "tag:aka", "label": "#aka/carpool" }, { "id": "#capability/responsiveness", "kind": "tag:capability", "label": "#capability/responsiveness" }, { "id": "#capability/throughput", "kind": "tag:capability", "label": "#capability/throughput" }, { "id": "#capability/message_processing_order", "kind": "tag:capability", "label": "#capability/message_processing_order" }, { "id": "#capability/simplicity", "kind": "tag:capability", "label": "#capability/simplicity" }, { "id": "Architecture Sinkhole antipattern", "kind": "note:antipattern", "label": "Architecture Sinkhole antipattern" }, { "id": "#context/layered_architecture", "kind": "tag:context", "label": "#context/layered_architecture" }, { "id": "#context/monolithic_architectures", "kind": "tag:context", "label": "#context/monolithic_architectures" }, { "id": "#capability/debuggability", "kind": "tag:capability", "label": "#capability/debuggability" }, { "id": "#capability/evolvability", "kind": "tag:capability", "label": "#capability/evolvability" }, { "id": "#capability/maintainability", "kind": "tag:capability", "label": "#capability/maintainability" }, { "id": "#capability/modularity", "kind": "tag:capability", "label": "#capability/modularity" }, { "id": "#capability/testability", "kind": "tag:capability", "label": "#capability/testability" }, { "id": "#capability/initial_time_to_market", "kind": "tag:capability", "label": "#capability/initial_time_to_market" }, { "id": "Architecture by Implication antipattern", "kind": "note:antipattern", "label": "Architecture by Implication antipattern" }, { "id": "#context/agentic_code_generation", "kind": "tag:context", "label": "#context/agentic_code_generation" }, { "id": "#context/architectural_styles", "kind": "tag:context", "label": "#context/architectural_styles" }, { "id": "#capability/cost", "kind": "tag:capability", "label": "#capability/cost" }, { "id": "#capability/adaptability", "kind": "tag:capability", "label": "#capability/adaptability" }, { "id": "#capability/agility", "kind": "tag:capability", "label": "#capability/agility" }, { "id": "#capability/availability", "kind": "tag:capability", "label": "#capability/availability" }, { "id": "#capability/data_consistency", "kind": "tag:capability", "label": "#capability/data_consistency" }, { "id": "#capability/data_integrity", "kind": "tag:capability", "label": "#capability/data_integrity" }, { "id": "#capability/deployability", "kind": "tag:capability", "label": "#capability/deployability" }, { "id": "#capability/elasticity", "kind": "tag:capability", "label": "#capability/elasticity" }, { "id": "#capability/error_handling", "kind": "tag:capability", "label": "#capability/error_handling" }, { "id": "#capability/fault_tolerance", "kind": "tag:capability", "label": "#capability/fault_tolerance" }, { "id": "#capability/flexibility", "kind": "tag:capability", "label": "#capability/flexibility" }, { "id": "#capability/scalability", "kind": "tag:capability", "label": "#capability/scalability" }, { "id": "#capability/workflow", "kind": "tag:capability", "label": "#capability/workflow" }, { "id": "Async Chain of Persistence pattern", "kind": "note:pattern", "label": "Async Chain of Persistence pattern" }, { "id": "Backend for Frontend pattern", "kind": "note:pattern", "label": "Backend for Frontend pattern" }, { "id": "#context/multiple_user_interfaces", "kind": "tag:context", "label": "#context/multiple_user_interfaces" }, { "id": "#capability/reusability", "kind": "tag:capability", "label": "#capability/reusability" }, { "id": "Cache Aside pattern", "kind": "note:pattern", "label": "Cache Aside pattern" }, { "id": "#context/caching", "kind": "tag:context", "label": "#context/caching" }, { "id": "#context/data", "kind": "tag:context", "label": "#context/data" }, { "id": "#context/microservices", "kind": "tag:context", "label": "#context/microservices" }, { "id": "#aka/lazy_loading", "kind": "tag:aka", "label": "#aka/lazy_loading" }, { "id": "Choreography pattern", "kind": "note:pattern", "label": "Choreography pattern" }, { "id": "#context/workflow", "kind": "tag:context", "label": "#context/workflow" }, { "id": "#aka/broker", "kind": "tag:aka", "label": "#aka/broker" }, { "id": "#influence/communication", "kind": "tag:influence", "label": "#influence/communication" }, { "id": "#influence/atomicity", "kind": "tag:influence", "label": "#influence/atomicity" }, { "id": "#influence/quantum", "kind": "tag:influence", "label": "#influence/quantum" }, { "id": "#capability/domain_alignment", "kind": "tag:capability", "label": "#capability/domain_alignment" }, { "id": "Command Query Responsibility Segregation pattern", "kind": "note:pattern", "label": "Command Query Responsibility Segregation pattern" }, { "id": "Compensating Updates pattern", "kind": "note:pattern", "label": "Compensating Updates pattern" }, { "id": "#aka/saga", "kind": "tag:aka", "label": "#aka/saga" }, { "id": "Contextual Events pattern", "kind": "note:pattern", "label": "Contextual Events pattern" }, { "id": "#context/event_granularity", "kind": "tag:context", "label": "#context/event_granularity" }, { "id": "Cross-Cutting State pattern", "kind": "note:pattern", "label": "Cross-Cutting State pattern" }, { "id": "Data-Based Event Contract pattern", "kind": "note:pattern", "label": "Data-Based Event Contract pattern" }, { "id": "#context/contracts", "kind": "tag:context", "label": "#context/contracts" }, { "id": "#capability/bandwidth_usage", "kind": "tag:capability", "label": "#capability/bandwidth_usage" }, { "id": "Domain-Broker pattern", "kind": "note:pattern", "label": "Domain-Broker pattern" }, { "id": "Event Sourcing pattern", "kind": "note:pattern", "label": "Event Sourcing pattern" }, { "id": "#capability/auditability", "kind": "tag:capability", "label": "#capability/auditability" }, { "id": "Explicit Workflow State pattern", "kind": "note:pattern", "label": "Explicit Workflow State pattern" }, { "id": "Extensible Events pattern", "kind": "note:pattern", "label": "Extensible Events pattern" }, { "id": "Front Controller pattern", "kind": "note:pattern", "label": "Front Controller pattern" }, { "id": "#aka/front_orchestrator", "kind": "tag:aka", "label": "#aka/front_orchestrator" }, { "id": "#influence/transactionality", "kind": "tag:influence", "label": "#influence/transactionality" }, { "id": "Frozen Caveman pitfall", "kind": "note:pitfall", "label": "Frozen Caveman pitfall" }, { "id": "#context/decision_making", "kind": "tag:context", "label": "#context/decision_making" }, { "id": "Grains of Sand pitfall", "kind": "note:pitfall", "label": "Grains of Sand pitfall" }, { "id": "#context/modularity", "kind": "tag:context", "label": "#context/modularity" }, { "id": "#context/service_granularity", "kind": "tag:context", "label": "#context/service_granularity" }, { "id": "Implicit Workflow State pattern", "kind": "note:pattern", "label": "Implicit Workflow State pattern" }, { "id": "Key-Based Event Contract pattern", "kind": "note:pattern", "label": "Key-Based Event Contract pattern" }, { "id": "Microservice All the Things pitfall", "kind": "note:pitfall", "label": "Microservice All the Things pitfall" }, { "id": "Multi-Broker pattern", "kind": "note:pattern", "label": "Multi-Broker pattern" }, { "id": "#context/high_volume_processing", "kind": "tag:context", "label": "#context/high_volume_processing" }, { "id": "Nexus Architecture pattern", "kind": "note:pattern", "label": "Nexus Architecture pattern" }, { "id": "#influence/granularity", "kind": "tag:influence", "label": "#influence/granularity" }, { "id": "Orchestration pattern", "kind": "note:pattern", "label": "Orchestration pattern" }, { "id": "#aka/mediator", "kind": "tag:aka", "label": "#aka/mediator" }, { "id": "#influence/quantum/contract", "kind": "tag:influence", "label": "#influence/quantum/contract" }, { "id": "#influence/quantum/static", "kind": "tag:influence", "label": "#influence/quantum/static" }, { "id": "#influence/quantum/dynamic", "kind": "tag:influence", "label": "#influence/quantum/dynamic" }, { "id": "Overcentralization antipattern", "kind": "note:antipattern", "label": "Overcentralization antipattern" }, { "id": "#context/integration_architecture", "kind": "tag:context", "label": "#context/integration_architecture" }, { "id": "Read-Through Write-Through Cache pattern", "kind": "note:pattern", "label": "Read-Through Write-Through Cache pattern" }, { "id": "Service Sharding pattern", "kind": "note:pattern", "label": "Service Sharding pattern" }, { "id": "#context/distributed_architecture", "kind": "tag:context", "label": "#context/distributed_architecture" }, { "id": "Stamp Coupling antipattern", "kind": "note:antipattern", "label": "Stamp Coupling antipattern" }, { "id": "Stovepipe Architecture antipattern", "kind": "note:antipattern", "label": "Stovepipe Architecture antipattern" }, { "id": "#context/iterative_architecture", "kind": "tag:context", "label": "#context/iterative_architecture" }, { "id": "Supervisor Consumer pattern", "kind": "note:pattern", "label": "Supervisor Consumer pattern" }, { "id": "Thread Delegate pattern", "kind": "note:pattern", "label": "Thread Delegate pattern" }, { "id": "Workflow Event pattern", "kind": "note:pattern", "label": "Workflow Event pattern" }], "links": [{ "s": "Ambulance pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Ambulance pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Ambulance pattern", "t": "#aka/carpool", "rel": "aka" }, { "s": "Ambulance pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Ambulance pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Ambulance pattern", "t": "#capability/message_processing_order", "rel": "degraded" }, { "s": "Ambulance pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Ambulance pattern", "t": "Supervisor Consumer pattern", "rel": "link" }, { "s": "Ambulance pattern", "t": "Thread Delegate pattern", "rel": "link" }, { "s": "Architecture Sinkhole antipattern", "t": "#context/layered_architecture", "rel": "context" }, { "s": "Architecture Sinkhole antipattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/debuggability", "rel": "improved" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/maintainability", "rel": "improved" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/modularity", "rel": "improved" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/simplicity", "rel": "improved" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/initial_time_to_market", "rel": "degraded" }, { "s": "Architecture Sinkhole antipattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Architecture Sinkhole antipattern", "t": "Architecture by Implication antipattern", "rel": "link" }, { "s": "Architecture by Implication antipattern", "t": "#context/agentic_code_generation", "rel": "context" }, { "s": "Architecture by Implication antipattern", "t": "#context/architectural_styles", "rel": "context" }, { "s": "Architecture by Implication antipattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Architecture by Implication antipattern", "t": "#capability/cost", "rel": "improved" }, { "s": "Architecture by Implication antipattern", "t": "#capability/initial_time_to_market", "rel": "improved" }, { "s": "Architecture by Implication antipattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/agility", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/availability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/deployability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/error_handling", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/fault_tolerance", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/flexibility", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/maintainability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/modularity", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/testability", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "#capability/workflow", "rel": "degraded" }, { "s": "Architecture by Implication antipattern", "t": "Stovepipe Architecture antipattern", "rel": "link" }, { "s": "Async Chain of Persistence pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Async Chain of Persistence pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/fault_tolerance", "rel": "improved" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Async Chain of Persistence pattern", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Async Chain of Persistence pattern", "t": "Contextual Events pattern", "rel": "link" }, { "s": "Async Chain of Persistence pattern", "t": "Data-Based Event Contract pattern", "rel": "link" }, { "s": "Async Chain of Persistence pattern", "t": "Extensible Events pattern", "rel": "link" }, { "s": "Async Chain of Persistence pattern", "t": "Key-Based Event Contract pattern", "rel": "link" }, { "s": "Async Chain of Persistence pattern", "t": "Workflow Event pattern", "rel": "link" }, { "s": "Backend for Frontend pattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Backend for Frontend pattern", "t": "#context/multiple_user_interfaces", "rel": "context" }, { "s": "Backend for Frontend pattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/agility", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/availability", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/deployability", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/error_handling", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/fault_tolerance", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/flexibility", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/maintainability", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/simplicity", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Backend for Frontend pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Backend for Frontend pattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Backend for Frontend pattern", "t": "#capability/reusability", "rel": "degraded" }, { "s": "Backend for Frontend pattern", "t": "Cache Aside pattern", "rel": "link" }, { "s": "Cache Aside pattern", "t": "#context/caching", "rel": "context" }, { "s": "Cache Aside pattern", "t": "#context/data", "rel": "context" }, { "s": "Cache Aside pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Cache Aside pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Cache Aside pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Cache Aside pattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Cache Aside pattern", "t": "#aka/lazy_loading", "rel": "aka" }, { "s": "Cache Aside pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Cache Aside pattern", "t": "#capability/flexibility", "rel": "improved" }, { "s": "Cache Aside pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Cache Aside pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Cache Aside pattern", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Cache Aside pattern", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Cache Aside pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Cache Aside pattern", "t": "Read-Through Write-Through Cache pattern", "rel": "link" }, { "s": "Cache Aside pattern", "t": "Event Sourcing pattern", "rel": "link" }, { "s": "Choreography pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Choreography pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Choreography pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Choreography pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Choreography pattern", "t": "#aka/broker", "rel": "aka" }, { "s": "Choreography pattern", "t": "#influence/communication", "rel": "influence" }, { "s": "Choreography pattern", "t": "#influence/atomicity", "rel": "influence" }, { "s": "Choreography pattern", "t": "#influence/quantum", "rel": "influence" }, { "s": "Choreography pattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/availability", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/domain_alignment", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/fault_tolerance", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/reusability", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Choreography pattern", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Choreography pattern", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Choreography pattern", "t": "#capability/debuggability", "rel": "degraded" }, { "s": "Choreography pattern", "t": "#capability/error_handling", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#context/data", "rel": "context" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/availability", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/fault_tolerance", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/flexibility", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/maintainability", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "#capability/testability", "rel": "degraded" }, { "s": "Command Query Responsibility Segregation pattern", "t": "Event Sourcing pattern", "rel": "link" }, { "s": "Compensating Updates pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Compensating Updates pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Compensating Updates pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Compensating Updates pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Compensating Updates pattern", "t": "#aka/saga", "rel": "aka" }, { "s": "Compensating Updates pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Compensating Updates pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Compensating Updates pattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Compensating Updates pattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Compensating Updates pattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Compensating Updates pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Compensating Updates pattern", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Compensating Updates pattern", "t": "Orchestration pattern", "rel": "link" }, { "s": "Compensating Updates pattern", "t": "Choreography pattern", "rel": "link" }, { "s": "Contextual Events pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Contextual Events pattern", "t": "#context/event_granularity", "rel": "context" }, { "s": "Contextual Events pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Contextual Events pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Contextual Events pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Contextual Events pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Contextual Events pattern", "t": "#capability/workflow", "rel": "improved" }, { "s": "Contextual Events pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Contextual Events pattern", "t": "Async Chain of Persistence pattern", "rel": "link" }, { "s": "Contextual Events pattern", "t": "Data-Based Event Contract pattern", "rel": "link" }, { "s": "Contextual Events pattern", "t": "Extensible Events pattern", "rel": "link" }, { "s": "Contextual Events pattern", "t": "Key-Based Event Contract pattern", "rel": "link" }, { "s": "Contextual Events pattern", "t": "Stamp Coupling antipattern", "rel": "link" }, { "s": "Cross-Cutting State pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Cross-Cutting State pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Cross-Cutting State pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Cross-Cutting State pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Cross-Cutting State pattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Cross-Cutting State pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Cross-Cutting State pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Cross-Cutting State pattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Cross-Cutting State pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Cross-Cutting State pattern", "t": "#capability/availability", "rel": "degraded" }, { "s": "Cross-Cutting State pattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Cross-Cutting State pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Cross-Cutting State pattern", "t": "Choreography pattern", "rel": "link" }, { "s": "Cross-Cutting State pattern", "t": "Compensating Updates pattern", "rel": "link" }, { "s": "Cross-Cutting State pattern", "t": "Orchestration pattern", "rel": "link" }, { "s": "Cross-Cutting State pattern", "t": "Front Controller pattern", "rel": "link" }, { "s": "Data-Based Event Contract pattern", "t": "#context/contracts", "rel": "context" }, { "s": "Data-Based Event Contract pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Data-Based Event Contract pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Data-Based Event Contract pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/bandwidth_usage", "rel": "degraded" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Data-Based Event Contract pattern", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Data-Based Event Contract pattern", "t": "Command Query Responsibility Segregation pattern", "rel": "link" }, { "s": "Data-Based Event Contract pattern", "t": "Cache Aside pattern", "rel": "link" }, { "s": "Data-Based Event Contract pattern", "t": "Read-Through Write-Through Cache pattern", "rel": "link" }, { "s": "Domain-Broker pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Domain-Broker pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Domain-Broker pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Domain-Broker pattern", "t": "#capability/availability", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/domain_alignment", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/fault_tolerance", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/flexibility", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/modularity", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Domain-Broker pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Domain-Broker pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Domain-Broker pattern", "t": "Multi-Broker pattern", "rel": "link" }, { "s": "Event Sourcing pattern", "t": "#context/data", "rel": "context" }, { "s": "Event Sourcing pattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Event Sourcing pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Event Sourcing pattern", "t": "#capability/auditability", "rel": "improved" }, { "s": "Event Sourcing pattern", "t": "#capability/debuggability", "rel": "improved" }, { "s": "Event Sourcing pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Event Sourcing pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Event Sourcing pattern", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Event Sourcing pattern", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Event Sourcing pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Event Sourcing pattern", "t": "Command Query Responsibility Segregation pattern", "rel": "link" }, { "s": "Event Sourcing pattern", "t": "Cache Aside pattern", "rel": "link" }, { "s": "Event Sourcing pattern", "t": "Read-Through Write-Through Cache pattern", "rel": "link" }, { "s": "Explicit Workflow State pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Explicit Workflow State pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Explicit Workflow State pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Explicit Workflow State pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Explicit Workflow State pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Explicit Workflow State pattern", "t": "#capability/workflow", "rel": "improved" }, { "s": "Explicit Workflow State pattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Explicit Workflow State pattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Explicit Workflow State pattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Explicit Workflow State pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Explicit Workflow State pattern", "t": "Implicit Workflow State pattern", "rel": "link" }, { "s": "Explicit Workflow State pattern", "t": "Front Controller pattern", "rel": "link" }, { "s": "Extensible Events pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Extensible Events pattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Extensible Events pattern", "t": "#capability/agility", "rel": "improved" }, { "s": "Extensible Events pattern", "t": "#capability/deployability", "rel": "improved" }, { "s": "Extensible Events pattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Extensible Events pattern", "t": "#capability/maintainability", "rel": "improved" }, { "s": "Extensible Events pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Extensible Events pattern", "t": "#capability/bandwidth_usage", "rel": "degraded" }, { "s": "Extensible Events pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Extensible Events pattern", "t": "Async Chain of Persistence pattern", "rel": "link" }, { "s": "Extensible Events pattern", "t": "Contextual Events pattern", "rel": "link" }, { "s": "Extensible Events pattern", "t": "Data-Based Event Contract pattern", "rel": "link" }, { "s": "Extensible Events pattern", "t": "Key-Based Event Contract pattern", "rel": "link" }, { "s": "Front Controller pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Front Controller pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Front Controller pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Front Controller pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Front Controller pattern", "t": "#aka/front_orchestrator", "rel": "aka" }, { "s": "Front Controller pattern", "t": "#influence/transactionality", "rel": "influence" }, { "s": "Front Controller pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Front Controller pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Front Controller pattern", "t": "#capability/debuggability", "rel": "improved" }, { "s": "Front Controller pattern", "t": "#capability/error_handling", "rel": "improved" }, { "s": "Front Controller pattern", "t": "#capability/workflow", "rel": "improved" }, { "s": "Front Controller pattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/availability", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/fault_tolerance", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/reusability", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Front Controller pattern", "t": "Cross-Cutting State pattern", "rel": "link" }, { "s": "Front Controller pattern", "t": "Choreography pattern", "rel": "link" }, { "s": "Frozen Caveman pitfall", "t": "#context/decision_making", "rel": "context" }, { "s": "Frozen Caveman pitfall", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/agility", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/availability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/cost", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/debuggability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/deployability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/error_handling", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/fault_tolerance", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/flexibility", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/maintainability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/modularity", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/testability", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Frozen Caveman pitfall", "t": "#capability/workflow", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "#context/microservices", "rel": "context" }, { "s": "Grains of Sand pitfall", "t": "#context/modularity", "rel": "context" }, { "s": "Grains of Sand pitfall", "t": "#context/service_granularity", "rel": "context" }, { "s": "Grains of Sand pitfall", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "#capability/cost", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "#capability/initial_time_to_market", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Grains of Sand pitfall", "t": "Microservice All the Things pitfall", "rel": "link" }, { "s": "Grains of Sand pitfall", "t": "Choreography pattern", "rel": "link" }, { "s": "Grains of Sand pitfall", "t": "Orchestration pattern", "rel": "link" }, { "s": "Grains of Sand pitfall", "t": "Compensating Updates pattern", "rel": "link" }, { "s": "Grains of Sand pitfall", "t": "Service Sharding pattern", "rel": "link" }, { "s": "Implicit Workflow State pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Implicit Workflow State pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Implicit Workflow State pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Implicit Workflow State pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Implicit Workflow State pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Implicit Workflow State pattern", "t": "#capability/workflow", "rel": "improved" }, { "s": "Implicit Workflow State pattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Implicit Workflow State pattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Implicit Workflow State pattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Implicit Workflow State pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Implicit Workflow State pattern", "t": "Cross-Cutting State pattern", "rel": "link" }, { "s": "Implicit Workflow State pattern", "t": "Explicit Workflow State pattern", "rel": "link" }, { "s": "Implicit Workflow State pattern", "t": "Front Controller pattern", "rel": "link" }, { "s": "Key-Based Event Contract pattern", "t": "#context/contracts", "rel": "context" }, { "s": "Key-Based Event Contract pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Key-Based Event Contract pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Key-Based Event Contract pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/bandwidth_usage", "rel": "improved" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Key-Based Event Contract pattern", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Key-Based Event Contract pattern", "t": "Cache Aside pattern", "rel": "link" }, { "s": "Key-Based Event Contract pattern", "t": "Contextual Events pattern", "rel": "link" }, { "s": "Key-Based Event Contract pattern", "t": "Data-Based Event Contract pattern", "rel": "link" }, { "s": "Key-Based Event Contract pattern", "t": "Extensible Events pattern", "rel": "link" }, { "s": "Microservice All the Things pitfall", "t": "#context/microservices", "rel": "context" }, { "s": "Microservice All the Things pitfall", "t": "#context/modularity", "rel": "context" }, { "s": "Microservice All the Things pitfall", "t": "#context/service_granularity", "rel": "context" }, { "s": "Microservice All the Things pitfall", "t": "#capability/cost", "rel": "degraded" }, { "s": "Microservice All the Things pitfall", "t": "#capability/data_consistency", "rel": "degraded" }, { "s": "Microservice All the Things pitfall", "t": "#capability/data_integrity", "rel": "degraded" }, { "s": "Microservice All the Things pitfall", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Microservice All the Things pitfall", "t": "Choreography pattern", "rel": "link" }, { "s": "Microservice All the Things pitfall", "t": "Orchestration pattern", "rel": "link" }, { "s": "Microservice All the Things pitfall", "t": "Compensating Updates pattern", "rel": "link" }, { "s": "Microservice All the Things pitfall", "t": "Grains of Sand pitfall", "rel": "link" }, { "s": "Multi-Broker pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Multi-Broker pattern", "t": "#context/high_volume_processing", "rel": "context" }, { "s": "Multi-Broker pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Multi-Broker pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Multi-Broker pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Multi-Broker pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Multi-Broker pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Multi-Broker pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Multi-Broker pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Multi-Broker pattern", "t": "#capability/message_processing_order", "rel": "degraded" }, { "s": "Multi-Broker pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Multi-Broker pattern", "t": "Thread Delegate pattern", "rel": "link" }, { "s": "Multi-Broker pattern", "t": "Supervisor Consumer pattern", "rel": "link" }, { "s": "Nexus Architecture pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Nexus Architecture pattern", "t": "#influence/granularity", "rel": "influence" }, { "s": "Nexus Architecture pattern", "t": "#influence/quantum", "rel": "influence" }, { "s": "Nexus Architecture pattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Nexus Architecture pattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Nexus Architecture pattern", "t": "#capability/maintainability", "rel": "improved" }, { "s": "Nexus Architecture pattern", "t": "#capability/reusability", "rel": "improved" }, { "s": "Nexus Architecture pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Nexus Architecture pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Nexus Architecture pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Orchestration pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Orchestration pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Orchestration pattern", "t": "#aka/mediator", "rel": "aka" }, { "s": "Orchestration pattern", "t": "#influence/quantum/contract", "rel": "influence" }, { "s": "Orchestration pattern", "t": "#influence/quantum/static", "rel": "influence" }, { "s": "Orchestration pattern", "t": "#influence/quantum/dynamic", "rel": "influence" }, { "s": "Orchestration pattern", "t": "#influence/transactionality", "rel": "influence" }, { "s": "Orchestration pattern", "t": "#influence/granularity", "rel": "influence" }, { "s": "Orchestration pattern", "t": "#influence/communication", "rel": "influence" }, { "s": "Orchestration pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Orchestration pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Orchestration pattern", "t": "#capability/debuggability", "rel": "improved" }, { "s": "Orchestration pattern", "t": "#capability/error_handling", "rel": "improved" }, { "s": "Orchestration pattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/availability", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/fault_tolerance", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/reusability", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "#capability/throughput", "rel": "degraded" }, { "s": "Orchestration pattern", "t": "Choreography pattern", "rel": "link" }, { "s": "Orchestration pattern", "t": "Compensating Updates pattern", "rel": "link" }, { "s": "Overcentralization antipattern", "t": "#context/data", "rel": "context" }, { "s": "Overcentralization antipattern", "t": "#context/integration_architecture", "rel": "context" }, { "s": "Overcentralization antipattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Overcentralization antipattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Overcentralization antipattern", "t": "#capability/workflow", "rel": "improved" }, { "s": "Overcentralization antipattern", "t": "#capability/agility", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/availability", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/deployability", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/fault_tolerance", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/maintainability", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/modularity", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/reusability", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Overcentralization antipattern", "t": "#capability/testability", "rel": "degraded" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#context/caching", "rel": "context" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#context/data", "rel": "context" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#capability/simplicity", "rel": "improved" }, { "s": "Read-Through Write-Through Cache pattern", "t": "#capability/flexibility", "rel": "degraded" }, { "s": "Read-Through Write-Through Cache pattern", "t": "Command Query Responsibility Segregation pattern", "rel": "link" }, { "s": "Read-Through Write-Through Cache pattern", "t": "Cache Aside pattern", "rel": "link" }, { "s": "Read-Through Write-Through Cache pattern", "t": "Event Sourcing pattern", "rel": "link" }, { "s": "Service Sharding pattern", "t": "#context/distributed_architecture", "rel": "context" }, { "s": "Service Sharding pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Service Sharding pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Service Sharding pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Service Sharding pattern", "t": "#context/service_granularity", "rel": "context" }, { "s": "Service Sharding pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Service Sharding pattern", "t": "#influence/granularity", "rel": "influence" }, { "s": "Service Sharding pattern", "t": "#influence/quantum/dynamic", "rel": "influence" }, { "s": "Service Sharding pattern", "t": "#influence/quantum/contract", "rel": "influence" }, { "s": "Service Sharding pattern", "t": "#capability/data_consistency", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/data_integrity", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/domain_alignment", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/simplicity", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/testability", "rel": "improved" }, { "s": "Service Sharding pattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Service Sharding pattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Service Sharding pattern", "t": "Compensating Updates pattern", "rel": "link" }, { "s": "Service Sharding pattern", "t": "Orchestration pattern", "rel": "link" }, { "s": "Service Sharding pattern", "t": "Choreography pattern", "rel": "link" }, { "s": "Stamp Coupling antipattern", "t": "#context/contracts", "rel": "context" }, { "s": "Stamp Coupling antipattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Stamp Coupling antipattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Stamp Coupling antipattern", "t": "#context/microservices", "rel": "context" }, { "s": "Stamp Coupling antipattern", "t": "#capability/adaptability", "rel": "improved" }, { "s": "Stamp Coupling antipattern", "t": "#capability/evolvability", "rel": "improved" }, { "s": "Stamp Coupling antipattern", "t": "#capability/simplicity", "rel": "improved" }, { "s": "Stamp Coupling antipattern", "t": "#capability/bandwidth_usage", "rel": "degraded" }, { "s": "Stamp Coupling antipattern", "t": "Contextual Events pattern", "rel": "link" }, { "s": "Stamp Coupling antipattern", "t": "Data-Based Event Contract pattern", "rel": "link" }, { "s": "Stamp Coupling antipattern", "t": "Extensible Events pattern", "rel": "link" }, { "s": "Stamp Coupling antipattern", "t": "Key-Based Event Contract pattern", "rel": "link" }, { "s": "Stovepipe Architecture antipattern", "t": "#context/architectural_styles", "rel": "context" }, { "s": "Stovepipe Architecture antipattern", "t": "#context/iterative_architecture", "rel": "context" }, { "s": "Stovepipe Architecture antipattern", "t": "#context/monolithic_architectures", "rel": "context" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/cost", "rel": "improved" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/initial_time_to_market", "rel": "improved" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/adaptability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/agility", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/availability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/deployability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/domain_alignment", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/elasticity", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/evolvability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/fault_tolerance", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/maintainability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/responsiveness", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/scalability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "#capability/testability", "rel": "degraded" }, { "s": "Stovepipe Architecture antipattern", "t": "Architecture by Implication antipattern", "rel": "link" }, { "s": "Stovepipe Architecture antipattern", "t": "Grains of Sand pitfall", "rel": "link" }, { "s": "Supervisor Consumer pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Supervisor Consumer pattern", "t": "#context/high_volume_processing", "rel": "context" }, { "s": "Supervisor Consumer pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Supervisor Consumer pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Supervisor Consumer pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Supervisor Consumer pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Supervisor Consumer pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Supervisor Consumer pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Supervisor Consumer pattern", "t": "#capability/message_processing_order", "rel": "degraded" }, { "s": "Supervisor Consumer pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Supervisor Consumer pattern", "t": "Multi-Broker pattern", "rel": "link" }, { "s": "Supervisor Consumer pattern", "t": "Thread Delegate pattern", "rel": "link" }, { "s": "Thread Delegate pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Thread Delegate pattern", "t": "#context/high_volume_processing", "rel": "context" }, { "s": "Thread Delegate pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Thread Delegate pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Thread Delegate pattern", "t": "#capability/message_processing_order", "rel": "improved" }, { "s": "Thread Delegate pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Thread Delegate pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Thread Delegate pattern", "t": "#capability/throughput", "rel": "improved" }, { "s": "Thread Delegate pattern", "t": "#capability/cost", "rel": "degraded" }, { "s": "Thread Delegate pattern", "t": "#capability/error_handling", "rel": "degraded" }, { "s": "Thread Delegate pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Thread Delegate pattern", "t": "Multi-Broker pattern", "rel": "link" }, { "s": "Thread Delegate pattern", "t": "Supervisor Consumer pattern", "rel": "link" }, { "s": "Thread Delegate pattern", "t": "Ambulance pattern", "rel": "link" }, { "s": "Thread Delegate pattern", "t": "Workflow Event pattern", "rel": "link" }, { "s": "Workflow Event pattern", "t": "#context/event_driven_architecture", "rel": "context" }, { "s": "Workflow Event pattern", "t": "#context/message_based_architectures", "rel": "context" }, { "s": "Workflow Event pattern", "t": "#context/microservices", "rel": "context" }, { "s": "Workflow Event pattern", "t": "#context/workflow", "rel": "context" }, { "s": "Workflow Event pattern", "t": "#capability/elasticity", "rel": "improved" }, { "s": "Workflow Event pattern", "t": "#capability/error_handling", "rel": "improved" }, { "s": "Workflow Event pattern", "t": "#capability/responsiveness", "rel": "improved" }, { "s": "Workflow Event pattern", "t": "#capability/scalability", "rel": "improved" }, { "s": "Workflow Event pattern", "t": "#capability/message_processing_order", "rel": "degraded" }, { "s": "Workflow Event pattern", "t": "#capability/simplicity", "rel": "degraded" }, { "s": "Workflow Event pattern", "t": "Thread Delegate pattern", "rel": "link" }] };
+    const col = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+    const KIND_COLOR = {}, REL_COLOR = {}, THEME = {};
+    function readTheme() {
+      Object.assign(KIND_COLOR, {
+        "note:pattern": col('--note'), "note:antipattern": col('--anti'), "note:pitfall": col('--pit'), "note:unresolved": col('--unres'),
+        "tag:context": col('--ctx'), "tag:capability": col('--cap'), "tag:author": col('--auth'), "tag:influence": col('--infl'), "tag:aka": col('--aka')
+      });
+      Object.assign(REL_COLOR, { link: col('--link'), context: col('--ctx'), improved: col('--imp'), degraded: col('--deg'), author: col('--auth'), influence: col('--infl'), aka: col('--aka') });
+      Object.assign(THEME, { label: col('--label'), ring: col('--ring'), ringSoft: col('--ring-soft') });
+    }
+    const themeToggle = document.getElementById('theme-toggle');
+    const systemLight = matchMedia('(prefers-color-scheme: light)');
+    const isLightTheme = () => document.documentElement.dataset.theme === 'light' || (!document.documentElement.dataset.theme && systemLight.matches);
+    function updateThemeToggle() {
+      const light = isLightTheme();
+      themeToggle.textContent = light ? 'Use dark theme' : 'Use light theme';
+      themeToggle.setAttribute('aria-pressed', String(light));
+    }
+    function setTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      readTheme();
+      updateThemeToggle();
+    }
+    themeToggle.addEventListener('click', () => setTheme(isLightTheme() ? 'dark' : 'light'));
+    readTheme();
+    updateThemeToggle();
+    systemLight.addEventListener('change', () => { if (!document.documentElement.dataset.theme) { readTheme(); updateThemeToggle(); } });
+    const KIND_LABEL = { "note:pattern": "Pattern", "note:antipattern": "Antipattern", "note:pitfall": "Pitfall", "note:unresolved": "Unresolved link", "tag:context": "Context tag", "tag:capability": "Capability tag", "tag:author": "Author tag", "tag:influence": "Influence tag", "tag:aka": "Alias tag" };
+
+    const byId = new Map();
+    const W0 = innerWidth, H0 = innerHeight;
+    DATA.nodes.forEach((n, i) => { const a = i * 2.399, r = Math.sqrt(i) * 30; n.x = W0 / 2 + Math.cos(a) * r; n.y = H0 / 2 + Math.sin(a) * r; n.vx = n.vy = 0; n.fixed = false; n.deg = 0; byId.set(n.id, n); });
+    DATA.links.forEach(l => { l.source = byId.get(l.s); l.target = byId.get(l.t); l.source.deg++; l.target.deg++; });
+    DATA.nodes.forEach(n => { n.r = 2.5 + Math.sqrt(n.deg) * 1.1; });
+
+    const enabled = {}; document.querySelectorAll('#panel input[data-k]').forEach(cb => { enabled[cb.dataset.k] = cb.checked; cb.onchange = () => { enabled[cb.dataset.k] = cb.checked; rebuild(); }; });
+    let nodes = [], links = [], adj = new Map();
+    function rebuild() {
+      nodes = DATA.nodes.filter(n => enabled[n.kind]);
+      const set = new Set(nodes);
+      links = DATA.links.filter(l => set.has(l.source) && set.has(l.target));
+      adj = new Map(); nodes.forEach(n => adj.set(n, new Set()));
+      links.forEach(l => { adj.get(l.source).add(l.target); adj.get(l.target).add(l.source); });
+      document.getElementById('stat').textContent = `${nodes.length} nodes · ${links.length} edges`;
+      alpha = Math.max(alpha, .6);
+    }
+
+    // ---------- simulation ----------
+    let alpha = 1;
+    const P = { repel: 10, dist: 120, center: .12 };
+    function tick() {
+      if (alpha < .003) return;
+      const n = nodes.length; if (!n) return;
+      const k = P.repel * 700;
+      // Barnes-Hut is overkill for <150 nodes; O(n^2)
+      for (let i = 0; i < n; i++) {
+        const a = nodes[i];
+        for (let j = i + 1; j < n; j++) {
+          const b = nodes[j];
+          let dx = b.x - a.x, dy = b.y - a.y, d2 = dx * dx + dy * dy; if (d2 < 1) { dx = Math.random() - .5; dy = Math.random() - .5; d2 = 1; }
+          if (d2 > 1000000) continue;
+          const f = k / d2, d = Math.sqrt(d2), fx = dx / d * f, fy = dy / d * f;
+          a.vx -= fx * alpha; a.vy -= fy * alpha; b.vx += fx * alpha; b.vy += fy * alpha;
+        }
+      }
+      for (const l of links) {
+        const a = l.source, b = l.target;
+        let dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+        const target = P.dist * (l.rel === 'link' ? 1 : .75);
+        const f = (d - target) / d * .08 * alpha;
+        const wa = b.deg / (a.deg + b.deg), wb = 1 - wa;
+        a.vx += dx * f * wa; a.vy += dy * f * wa; b.vx -= dx * f * wb; b.vy -= dy * f * wb;
+      }
+      const cx = innerWidth / 2, cy = (innerHeight + headerHeight()) / 2;
+      for (const p of nodes) {
+        p.vx += (cx - p.x) * P.center * .01 * alpha; p.vy += (cy - p.y) * P.center * .01 * alpha;
+        if (p.fixed || p === dragging) { p.vx = p.vy = 0; continue; }
+        p.vx *= .6; p.vy *= .6; p.x += p.vx; p.y += p.vy;
+      }
+      alpha *= .995;
+    }
+
+    // ---------- view / render ----------
+    const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+    const headerHeight = () => document.getElementById('hdr').offsetHeight;
+    let dpr = devicePixelRatio || 1, tx = 0, ty = 0, scale = 1;
+    function resize() { dpr = devicePixelRatio || 1; cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; }
+    addEventListener('resize', resize); resize();
+    let hover = null, selected = null, dragging = null, query = '';
+    const showArrows = document.getElementById('arrows'), showLabels = document.getElementById('labels');
+
+    function draw() {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = col('--bg'); ctx.fillRect(0, 0, innerWidth, innerHeight);
+      ctx.translate(tx, ty); ctx.scale(scale, scale);
+      const focus = hover || selected;
+      const nb = focus ? adj.get(focus) : null;
+      const q = query.toLowerCase();
+      const matches = q ? new Set(nodes.filter(n => n.label.toLowerCase().includes(q))) : null;
+      // edges
+      for (const l of links) {
+        const lit = focus ? (l.source === focus || l.target === focus) : true;
+        ctx.globalAlpha = focus ? (lit ? .95 : .06) : (matches ? .12 : .55);
+        ctx.strokeStyle = REL_COLOR[l.rel] || '#666';
+        ctx.lineWidth = (l.rel === 'link' ? 1.2 : .9) / scale * (lit && focus ? 1.6 : 1);
+        ctx.beginPath(); ctx.moveTo(l.source.x, l.source.y); ctx.lineTo(l.target.x, l.target.y); ctx.stroke();
+        if (showArrows.checked && (lit || !focus)) {
+          const dx = l.target.x - l.source.x, dy = l.target.y - l.source.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+          const ex = l.target.x - ux * (l.target.r + 2), ey = l.target.y - uy * (l.target.r + 2), s = 6 / scale;
+          ctx.fillStyle = ctx.strokeStyle; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - ux * s - uy * s * .5, ey - uy * s + ux * s * .5); ctx.lineTo(ex - ux * s + uy * s * .5, ey - uy * s - ux * s * .5); ctx.closePath(); ctx.fill();
+        }
+      }
+      // nodes
+      ctx.globalAlpha = 1;
+      for (const n of nodes) {
+        const lit = focus ? (n === focus || nb.has(n)) : (matches ? matches.has(n) : true);
+        ctx.globalAlpha = lit ? 1 : .12;
+        ctx.fillStyle = KIND_COLOR[n.kind];
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+        if (n === selected || n === hover) { ctx.strokeStyle = THEME.ring; ctx.lineWidth = 2 / scale; ctx.stroke(); }
+        if (n.fixed) { ctx.strokeStyle = THEME.ringSoft; ctx.lineWidth = 1 / scale; ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 3 / scale, 0, Math.PI * 2); ctx.stroke(); }
+      }
+      // labels
+      const labelAll = showLabels.checked && scale > .75;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      for (const n of nodes) {
+        const lit = focus ? (n === focus || nb.has(n)) : (matches ? matches.has(n) : true);
+        if (!(labelAll || n === hover || n === selected || (focus && lit) || (matches && lit))) continue;
+        const fs = Math.max(10 / scale, 11);
+        ctx.font = `${n === focus ? '600 ' : ''}${fs}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+        ctx.globalAlpha = lit ? (labelAll ? .85 : 1) : .1;
+        ctx.fillStyle = n.kind.startsWith('tag') ? KIND_COLOR[n.kind] : THEME.label;
+        ctx.fillText(n.label, n.x, n.y + n.r + 3 / scale);
+      }
+      ctx.globalAlpha = 1;
+    }
+    function loop() { tick(); draw(); requestAnimationFrame(loop); }
+
+    // ---------- interaction ----------
+    const toWorld = (px, py) => [(px - tx) / scale, (py - ty) / scale];
+    function pick(px, py) {
+      const [x, y] = toWorld(px, py); let best = null, bd = Infinity;
+      for (const n of nodes) { const d = Math.hypot(n.x - x, n.y - y); if (d < Math.max(n.r, 6 / scale) + 3 / scale && d < bd) { best = n; bd = d; } } return best;
+    }
+    let panning = false, px0 = 0, py0 = 0, moved = false;
+    cv.addEventListener('mousedown', e => {
+      const n = pick(e.clientX, e.clientY); moved = false; px0 = e.clientX; py0 = e.clientY;
+      if (n) { dragging = n; alpha = Math.max(alpha, .3); } else { panning = true; cv.classList.add('drag'); }
+    });
+    addEventListener('mousemove', e => {
+      if (dragging) { const [x, y] = toWorld(e.clientX, e.clientY); dragging.x = x; dragging.y = y; alpha = Math.max(alpha, .3); moved = true; return; }
+      if (panning) { tx += e.clientX - px0; ty += e.clientY - py0; px0 = e.clientX; py0 = e.clientY; moved = true; return; }
+      hover = pick(e.clientX, e.clientY); cv.style.cursor = hover ? 'pointer' : 'grab';
+    });
+    addEventListener('mouseup', e => {
+      if (dragging) { if (moved) dragging.fixed = true; else select(dragging); dragging = null; }
+      panning = false; cv.classList.remove('drag');
+    });
+    cv.addEventListener('dblclick', e => { const n = pick(e.clientX, e.clientY); if (n) { n.fixed = false; alpha = Math.max(alpha, .3); } });
+    cv.addEventListener('wheel', e => {
+      e.preventDefault(); const f = Math.exp(-e.deltaY * .0015); const [wx, wy] = toWorld(e.clientX, e.clientY);
+      scale = Math.min(6, Math.max(.15, scale * f)); tx = e.clientX - wx * scale; ty = e.clientY - wy * scale;
+    }, { passive: false });
+    // touch: basic pan/drag
+    let lastTouch = null;
+    cv.addEventListener('touchstart', e => { const t = e.touches[0]; lastTouch = [t.clientX, t.clientY]; const n = pick(t.clientX, t.clientY); if (n) dragging = n; else panning = true; }, { passive: true });
+    cv.addEventListener('touchmove', e => { const t = e.touches[0]; if (dragging) { const [x, y] = toWorld(t.clientX, t.clientY); dragging.x = x; dragging.y = y; alpha = Math.max(alpha, .3); } else if (panning && lastTouch) { tx += t.clientX - lastTouch[0]; ty += t.clientY - lastTouch[1]; } lastTouch = [t.clientX, t.clientY]; e.preventDefault(); }, { passive: false });
+    cv.addEventListener('touchend', () => { if (dragging) { select(dragging); dragging = null; } panning = false; });
+
+    const info = document.getElementById('info'), infoBody = document.getElementById('infoBody');
+    document.getElementById('close').onclick = () => { selected = null; info.style.display = 'none'; };
+    function select(n) {
+      selected = n; if (!n) { info.style.display = 'none'; return; }
+      const out = DATA.links.filter(l => l.source === n), inn = DATA.links.filter(l => l.target === n);
+      const group = (arr, rel, title, cls = '') => {
+        const xs = arr.filter(l => l.rel === rel); if (!xs.length) return '';
+        return `<h2>${title} (${xs.length})</h2><ul>${xs.map(l => `<li class="${cls}" data-id="${esc(l.target === n ? l.source.id : l.target.id)}">${esc(l.target === n ? l.source.label : l.target.label)}</li>`).join('')}</ul>`;
+      };
+      let h = `<h1>${esc(n.label)}</h1><div class="kind">${KIND_LABEL[n.kind]} · ${n.deg} connections</div>`;
+      if (n.kind.startsWith('note')) {
+        h += group(out, 'author', 'Author') + group(out, 'context', 'Contexts') + group(out, 'improved', 'Improves', 'imp') + group(out, 'degraded', 'Degrades', 'deg')
+          + group(out, 'influence', 'Influences') + group(out, 'aka', 'Also known as') + group(out, 'link', 'Links to') + group(inn, 'link', 'Linked from');
+      } else {
+        h += group(inn, 'improved', 'Improved by', 'imp') + group(inn, 'degraded', 'Degraded by', 'deg')
+          + group(inn, 'context', 'Used in') + group(inn, 'influence', 'Influences') + group(inn, 'aka', 'Alias of');
+      }
+      infoBody.innerHTML = h; info.style.display = 'block';
+      infoBody.querySelectorAll('li').forEach(li => li.onclick = () => { const t = byId.get(li.dataset.id); if (t) { if (!enabled[t.kind]) { const cb = document.querySelector(`[data-k="${t.kind}"]`); cb.checked = true; enabled[t.kind] = true; rebuild(); } select(t); centerOn(t); } });
+    }
+    const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    function centerOn(n) { tx = innerWidth / 2 - n.x * scale; ty = (innerHeight + headerHeight()) / 2 - n.y * scale; }
+    document.getElementById('q').addEventListener('input', e => { query = e.target.value.trim(); });
+    document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') { const q = query.toLowerCase(); const n = nodes.find(x => x.label.toLowerCase().includes(q)); if (n) { select(n); centerOn(n); } } });
+    document.getElementById('repel').oninput = e => { P.repel = +e.target.value; alpha = Math.max(alpha, .5); };
+    document.getElementById('dist').oninput = e => { P.dist = +e.target.value; alpha = Math.max(alpha, .5); };
+    document.getElementById('center').oninput = e => { P.center = e.target.value / 100; alpha = Math.max(alpha, .5); };
+    document.getElementById('reheat').onclick = () => { nodes.forEach(n => n.fixed = false); alpha = 1; };
+    function fit() {
+      if (!nodes.length) return; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      nodes.forEach(n => { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); });
+      const pad = 80, w = x1 - x0 + pad * 2, h = y1 - y0 + pad * 2; scale = Math.min(innerWidth / w, (innerHeight - headerHeight()) / h, 2);
+      tx = innerWidth / 2 - (x0 + x1) / 2 * scale; ty = (innerHeight + headerHeight()) / 2 - (y0 + y1) / 2 * scale;
+    }
+    document.getElementById('fit').onclick = fit;
+    addEventListener('keydown', e => { if (e.key === 'Escape') { selected = null; info.style.display = 'none'; } });
+
+    rebuild();
+    // pre-settle so the first frame is not a blob
+    for (let i = 0; i < 700; i++) tick();
+    fit(); alpha = .4;
+    loop();
+  </script>
 </body>
+
 </html>
